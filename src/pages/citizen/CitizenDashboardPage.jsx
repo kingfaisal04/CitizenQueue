@@ -3,9 +3,9 @@
  * 
  * Route: `/dashboard`
  * 
- * Redesigned central command hub for Senior High School applicants and guardians.
+ * Central command hub for Senior High School applicants and guardians.
  * Provides real-time admission progress, readiness breakdown, outstanding task
- * checklist, quick navigation, and appointment monitoring.
+ * checklist, quick navigation, and reporting visit monitoring.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,13 +22,16 @@ import {
   User,
   ArrowRight,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import { AdmissionService } from '../../services/admissionService';
 import { AppointmentService } from '../../services/appointmentService';
 import { Storage } from '../../services/storageService';
 import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/common/StatusBadge';
+import StageNavigation from '../../components/common/StageNavigation';
 
 export default function CitizenDashboardPage() {
   const { currentUser } = useAuth();
@@ -86,10 +89,10 @@ export default function CitizenDashboardPage() {
               <School size={13} />
               <span>{profile.assignedSchool || 'Senior High School Placement'}</span>
             </span>
-            <span className="text-xs text-slate-300 font-medium px-2 py-0.5 rounded bg-cqNavy-800/50">
+            <span className="text-xs text-slate-300 font-medium px-2.5 py-1 rounded-full bg-cqNavy-800/60 border border-cqNavy-700/60">
               {profile.programme || 'General Science'} • {profile.residentialStatus || 'Boarding'}
             </span>
-            <span className="text-xs text-cqTeal-300 font-mono">
+            <span className="text-xs text-cqTeal-300 font-mono bg-cqNavy-900/90 px-2.5 py-1 rounded-full border border-cqNavy-700/60">
               BECE Index: {profile.beceIndexNumber || '101245089'}
             </span>
           </div>
@@ -99,7 +102,7 @@ export default function CitizenDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-            Welcome to your Senior High School admission orchestration command centre. Coordinate your digital prospectus, submit documents for preliminary review, and secure your physical reporting slot.
+            Your centralized Senior High School admission orchestration command centre. Coordinate your digital prospectus, submit documents for preliminary review, and reserve your physical reporting slot.
           </p>
         </div>
 
@@ -125,13 +128,85 @@ export default function CitizenDashboardPage() {
         </div>
       </div>
 
-      {/* 2. Readiness Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Profile Completion */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2">
+      {/* 2. Recommended Next Step Banner */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            upcomingAppointment
+              ? 'bg-emerald-50 text-emerald-600'
+              : metrics.isReadyForReporting
+              ? 'bg-cqTeal-50 text-cqTeal-700'
+              : 'bg-amber-50 text-amber-700'
+          }`}>
+            {upcomingAppointment ? (
+              <CheckCircle2 size={20} />
+            ) : metrics.isReadyForReporting ? (
+              <Calendar size={20} />
+            ) : (
+              <Sparkles size={20} />
+            )}
+          </div>
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Recommended Next Action
+            </span>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">
+              {upcomingAppointment
+                ? `Reporting Visit Confirmed: ${upcomingAppointment.appointmentDate} at ${upcomingAppointment.appointmentTime}`
+                : metrics.isReadyForReporting
+                ? 'All Pre-Screening Tasks Ready: Choose Your Reporting Slot'
+                : outstandingTasks.length > 0
+                ? outstandingTasks[0].title
+                : 'Complete Your Admission Profile & Required Documents'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5 max-w-2xl">
+              {upcomingAppointment
+                ? `Please bring all original certificates in a brown envelope to ${upcomingAppointment.location}.`
+                : metrics.isReadyForReporting
+                ? 'Your bio-data and documents are provisionally accepted. Lock in your reporting appointment now.'
+                : outstandingTasks.length > 0
+                ? outstandingTasks[0].description
+                : 'Confirm all student details and review school prospectus items to prepare for enrollment.'}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to={
+            upcomingAppointment
+              ? `/appointments/${upcomingAppointment.id}`
+              : metrics.isReadyForReporting
+              ? '/book/srv-101'
+              : outstandingTasks.length > 0
+              ? outstandingTasks[0].link
+              : '/profile'
+          }
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 text-white text-xs font-bold transition-all shrink-0 shadow-xs"
+        >
+          <span>
+            {upcomingAppointment
+              ? 'View Reporting Pass'
+              : metrics.isReadyForReporting
+              ? 'Schedule Reporting Slot'
+              : outstandingTasks.length > 0
+              ? outstandingTasks[0].actionLabel
+              : 'Review Profile'}
+          </span>
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {/* 3. Readiness Overview Metric Cards (4 Clean Cards) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: Profile & Bio-data */}
+        <Link
+          to="/profile"
+          className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2 hover:border-slate-300 transition-all group"
+        >
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold text-slate-500">Profile Data</span>
-            <User size={16} className="text-cqNavy-600" />
+            <span className="text-xs font-semibold text-slate-500">Bio-Data & Placement</span>
+            <User size={16} className="text-cqNavy-600 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-2xl font-black text-slate-900">{metrics.profileScore}%</span>
@@ -147,18 +222,23 @@ export default function CitizenDashboardPage() {
               style={{ width: `${metrics.profileScore}%` }}
             />
           </div>
-        </div>
+        </Link>
 
-        {/* Prospectus Completion */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2">
+        {/* Card 2: Prospectus Supplies */}
+        <Link
+          to="/prospectus"
+          className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2 hover:border-slate-300 transition-all group"
+        >
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold text-slate-500">Prospectus Items</span>
-            <ShoppingBag size={16} className="text-cqTeal-600" />
+            <span className="text-xs font-semibold text-slate-500">Prospectus Supplies</span>
+            <ShoppingBag size={16} className="text-cqTeal-600 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-900">{metrics.prospectusProgress}%</span>
-            <span className="text-[10px] text-slate-500 font-semibold">
+            <span className="text-2xl font-black text-slate-900">
               {metrics.purchasedCount}/{metrics.totalProspectusItems}
+            </span>
+            <span className="text-[10px] text-cqTeal-700 font-bold">
+              {metrics.prospectusProgress}% Acquired
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -167,18 +247,21 @@ export default function CitizenDashboardPage() {
               style={{ width: `${metrics.prospectusProgress}%` }}
             />
           </div>
-        </div>
+        </Link>
 
-        {/* Document Submissions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2">
+        {/* Card 3: Document Submissions */}
+        <Link
+          to="/documents"
+          className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2 hover:border-slate-300 transition-all group"
+        >
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold text-slate-500">Documents</span>
-            <FileText size={16} className="text-blue-600" />
+            <span className="text-xs font-semibold text-slate-500">Official Documents</span>
+            <FileText size={16} className="text-blue-600 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-900">{metrics.documentProgress}%</span>
+            <span className="text-2xl font-black text-slate-900">{metrics.docsAccepted}</span>
             <span className="text-[10px] text-emerald-600 font-bold">
-              {metrics.docsAccepted} verified
+              of {metrics.totalDocs} Verified
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -187,55 +270,35 @@ export default function CitizenDashboardPage() {
               style={{ width: `${metrics.documentProgress}%` }}
             />
           </div>
-        </div>
+        </Link>
 
-        {/* Supplies Acquired */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold text-slate-500">Supplies Ready</span>
-            <CheckCircle2 size={16} className="text-emerald-600" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-900">
-              {metrics.purchasedCount}
-            </span>
-            <span className="text-[10px] font-bold text-slate-500">
-              of {metrics.totalProspectusItems} items
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            {metrics.totalProspectusItems - metrics.purchasedCount > 0 ? (
-              <span className="text-amber-700 font-semibold">{metrics.totalProspectusItems - metrics.purchasedCount} items remaining</span>
-            ) : (
-              <span className="text-emerald-700 font-bold">All supplies acquired ✓</span>
-            )}
-          </p>
-        </div>
-
-        {/* Reporting Appointment Status */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2 col-span-2 lg:col-span-1">
+        {/* Card 4: Reporting Slot Status */}
+        <Link
+          to={upcomingAppointment ? `/appointments/${upcomingAppointment.id}` : '/book/srv-101'}
+          className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2 hover:border-slate-300 transition-all group"
+        >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold text-slate-500">Reporting Slot</span>
-            <Calendar size={16} className="text-emerald-600" />
+            <Calendar size={16} className="text-emerald-600 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-sm font-black text-slate-900">
-              {upcomingAppointment ? 'Slot Booked' : metrics.isReadyForReporting ? 'Ready to Book' : 'Prerequisites Pending'}
+            <span className="text-base font-black text-slate-900 truncate">
+              {upcomingAppointment ? 'Slot Booked' : metrics.isReadyForReporting ? 'Ready to Book' : 'Pending Review'}
             </span>
           </div>
-          <div className="pt-1">
+          <div className="pt-0.5">
             {upcomingAppointment ? (
               <StatusBadge status={upcomingAppointment.status} size="sm" />
             ) : (
-              <span className="text-[11px] text-slate-500">
-                {metrics.isReadyForReporting ? 'Click below to schedule' : 'Complete documents & prospectus first'}
+              <span className="text-[10px] font-semibold text-slate-500">
+                {metrics.isReadyForReporting ? 'Click to select date' : 'Complete documents first'}
               </span>
             )}
           </div>
-        </div>
+        </Link>
       </div>
 
-      {/* 3. Main Dashboard Grid: Left (Outstanding Tasks & Actions), Right (Reporting Visit & Quick Access) */}
+      {/* 4. Main Dashboard Grid: Left (Outstanding Tasks & Quick Navigation), Right (Reporting Visit & Bulletins) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column (2 Cols on lg) */}
@@ -249,8 +312,8 @@ export default function CitizenDashboardPage() {
                   <AlertCircle size={18} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-cqNavy-950">Outstanding Admission Tasks</h2>
-                  <p className="text-xs text-slate-500">Items requiring student or guardian action before school reporting</p>
+                  <h2 className="text-base font-bold text-cqNavy-950">Pre-Arrival Action Items</h2>
+                  <p className="text-xs text-slate-500">Requirements to complete prior to your school reporting date</p>
                 </div>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
@@ -327,7 +390,7 @@ export default function CitizenDashboardPage() {
 
           {/* Quick Actions Navigation Section */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-cqNavy-950">Quick Navigation</h2>
+            <h2 className="text-base font-bold text-cqNavy-950">Admission Workflows</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               
               <Link
@@ -339,10 +402,10 @@ export default function CitizenDashboardPage() {
                 </div>
                 <div className="space-y-0.5">
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cqTeal-700">
-                    My Admission Profile
+                    Admission Profile
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Manage bio-data, guardian details and placement slip
+                    Manage bio-data, guardian contacts and placement slip
                   </p>
                 </div>
               </Link>
@@ -359,7 +422,7 @@ export default function CitizenDashboardPage() {
                     Digital Prospectus
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Inspect specifications and submit item photos
+                    Inspect general & gender requirements and mark supplies
                   </p>
                 </div>
               </Link>
@@ -376,7 +439,7 @@ export default function CitizenDashboardPage() {
                     Document Centre
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Upload certificates and view verification feedback
+                    Submit certificates and monitor administrative feedback
                   </p>
                 </div>
               </Link>
@@ -390,7 +453,7 @@ export default function CitizenDashboardPage() {
                 </div>
                 <div className="space-y-0.5">
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cqTeal-700">
-                    Admission Progress Timeline
+                    Journey Timeline
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     Track the 9 admission stages from placement to enrollment
@@ -401,7 +464,7 @@ export default function CitizenDashboardPage() {
           </div>
         </div>
 
-        {/* Right Column (1 Col on lg): Reporting Visit Card & Notifications */}
+        {/* Right Column (1 Col on lg): Reporting Visit Card & Bulletins */}
         <div className="space-y-6">
           
           {/* Active Appointment / Reporting Visit Card */}
@@ -418,24 +481,24 @@ export default function CitizenDashboardPage() {
 
             {upcomingAppointment ? (
               <div className="space-y-4">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Reference Token</span>
-                    <span className="font-mono font-bold text-cqNavy-950">
+                    <span className="font-mono font-bold text-cqNavy-950 bg-white px-2 py-0.5 rounded border border-slate-200">
                       {upcomingAppointment.referenceNumber}
                     </span>
                   </div>
 
-                  <div className="space-y-1 pt-1">
+                  <div className="space-y-1.5 pt-1">
                     <p className="text-xs font-bold text-slate-900">
                       {upcomingAppointment.serviceName}
                     </p>
                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                      <Clock size={13} className="text-cqTeal-600" />
+                      <Clock size={13} className="text-cqTeal-600 shrink-0" />
                       <span>{upcomingAppointment.appointmentDate} at {upcomingAppointment.appointmentTime}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                      <MapPin size={13} className="text-cqTeal-600" />
+                      <MapPin size={13} className="text-cqTeal-600 shrink-0" />
                       <span>{upcomingAppointment.location}</span>
                     </div>
                   </div>
@@ -453,7 +516,7 @@ export default function CitizenDashboardPage() {
                     to={`/appointments/${upcomingAppointment.id}`}
                     className="flex-1 py-2 text-center rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 text-white text-xs font-bold transition-colors"
                   >
-                    View Appointment Details
+                    View Reporting Pass
                   </Link>
                   <button
                     type="button"
@@ -473,7 +536,7 @@ export default function CitizenDashboardPage() {
                   </p>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
                     {metrics.isReadyForReporting
-                      ? 'You have completed all prerequisite documents and prospectus items! Book your school reporting date now.'
+                      ? 'You have completed all prerequisite documents and prospectus items! Select your school reporting date now.'
                       : 'Please complete your documents and prospectus review before booking a physical reporting slot.'}
                   </p>
                 </div>
@@ -489,11 +552,15 @@ export default function CitizenDashboardPage() {
             )}
           </div>
 
-          {/* Service Alerts & Communications */}
+          {/* School Registry Notices & Bulletins */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              School Desk Notices
-            </h3>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-cqTeal-600" />
+                <span>School Registry Notices</span>
+              </h3>
+              <span className="text-[10px] text-slate-400 font-medium">Official</span>
+            </div>
 
             <div className="space-y-2.5">
               {notifications.slice(0, 3).map((notif) => (
@@ -516,6 +583,14 @@ export default function CitizenDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* 5. Stage Navigation: Forward to Admission Profile */}
+      <StageNavigation
+        nextHref="/profile"
+        nextLabel="Proceed to Admission Profile"
+        currentStage="Stage 1 of 9"
+        stageTitle="Student Placement & Profile Setup"
+      />
 
       {/* Cancel Appointment Modal */}
       {cancelModalApt && (

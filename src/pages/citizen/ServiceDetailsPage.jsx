@@ -58,7 +58,7 @@ export default function ServiceDetailsPage() {
         </div>
         <h2 className="text-2xl font-bold text-slate-900">Service Not Found</h2>
         <p className="text-slate-600 text-sm">
-          The requested service ID "{serviceId}" does not exist in our demonstration catalog.
+          The requested service ID "{serviceId}" does not exist in the service catalog.
         </p>
         <Link
           to="/services"
@@ -280,7 +280,7 @@ export default function ServiceDetailsPage() {
 
             {availability.length === 0 ? (
               <p className="text-xs text-slate-500">
-                No active demonstration slots are currently configured for this service.
+                No active reporting slots are currently configured for this service.
               </p>
             ) : (
               <div className="space-y-3">

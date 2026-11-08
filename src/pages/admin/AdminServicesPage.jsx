@@ -103,7 +103,7 @@ export default function AdminServicesPage() {
 
     if (isCreating) {
       ServiceService.create(formData);
-      setFeedback('New demonstration service successfully created!');
+      setFeedback('New school service successfully created!');
     } else if (editingService) {
       ServiceService.update(editingService.id, {
         name: formData.name.trim(),
@@ -246,7 +246,7 @@ export default function AdminServicesPage() {
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h2 className="text-xl font-bold text-cqNavy-950">
-                {isCreating ? 'Create Demonstration Service' : 'Edit Service Configuration'}
+                {isCreating ? 'Create School Service Desk' : 'Edit Service Configuration'}
               </h2>
               <button
                 type="button"

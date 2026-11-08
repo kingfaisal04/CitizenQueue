@@ -65,9 +65,9 @@ export default function AppointmentDetailsPage() {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
         <AlertTriangle size={32} className="text-amber-500 mx-auto" />
-        <h2 className="text-2xl font-bold text-slate-900">Appointment Pass Not Found</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Appointment Record Not Found</h2>
         <p className="text-sm text-slate-600">
-          The booking reference could not be found in our demonstration records.
+          The booking reference could not be found in the admission registry records.
         </p>
         <Link
           to="/dashboard"
@@ -114,7 +114,7 @@ export default function AppointmentDetailsPage() {
         <div className="bg-cqNavy-950 text-white p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-cqNavy-900">
           <div className="space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-cqTeal-400">
-              Official Demonstration Verification Pass
+              Official Student Reporting & Verification Pass
             </span>
             <h1 className="text-2xl sm:text-3xl font-black font-mono">
               {appointment.referenceNumber}

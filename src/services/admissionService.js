@@ -551,7 +551,6 @@ export const AdmissionService = {
     const metrics = AdmissionService.getReadinessMetrics();
     const profile = Storage.getStudentProfile();
     const documents = Storage.getStudentDocuments();
-    const prospectusStatus = Storage.getStudentProspectusStatus();
     const prospectus = Storage.getProspectus();
 
     const tasks = [];

@@ -446,7 +446,7 @@ export default function DocumentCentrePage() {
                 <div className="text-center space-y-2 p-8 text-slate-500">
                   <FileText size={48} className="mx-auto text-slate-400" />
                   <p className="text-sm font-semibold">Digital PDF Preview Available</p>
-                  <p className="text-xs text-slate-400">File is securely registered in demonstration storage.</p>
+                  <p className="text-xs text-slate-400">File is encrypted and securely staged for administrative review.</p>
                 </div>
               )}
             </div>

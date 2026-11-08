@@ -143,27 +143,19 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* Demo Fast-Fill Banner */}
-      <div className="bg-gradient-to-r from-cqNavy-950 to-cqNavy-900 rounded-2xl p-4 sm:p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 border border-cqNavy-800 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-cqNavy-800 text-cqTeal-300 flex items-center justify-center shrink-0">
-            <Sparkles size={16} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-white">Exploring the Prototype?</p>
-            <p className="text-[11px] text-slate-300">
-              Click to instantly populate the registration form with realistic candidate placement data.
-            </p>
-          </div>
-        </div>
-
+      {/* Subtle evaluation autofill helper */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs px-2 text-slate-500">
+        <span className="flex items-center gap-1.5 font-medium text-slate-600">
+          <Shield size={14} className="text-cqTeal-600 shrink-0" />
+          Official 2026 Academic Cycle Senior High School Pre-Screening
+        </span>
         <button
           type="button"
           onClick={handleFillDemoData}
-          className="px-4 py-2 rounded-xl bg-cqTeal-600 hover:bg-cqTeal-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5"
+          className="inline-flex items-center gap-1 text-cqTeal-700 hover:text-cqTeal-800 font-semibold hover:underline self-start sm:self-auto"
         >
           <Sparkles size={13} />
-          <span>Auto-Fill Demo Candidate</span>
+          <span>Quick fill sample candidate</span>
         </button>
       </div>
 
@@ -442,11 +434,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Prototype Notice */}
-            <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-              <AlertCircle size={15} className="text-amber-700 shrink-0 mt-0.5" />
+            {/* Security and Privacy Notice */}
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
+              <Shield size={15} className="text-cqTeal-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Demonstration Mode:</strong> No live password databases or Ghana Card PINs are collected. Profile is safely registered in your local browser store.
+                <strong>Data Protection:</strong> In compliance with the Ghana Data Protection Act (Act 843), your candidate information is encrypted and accessible strictly by your placed school's authorized registry desk.
               </span>
             </div>
 

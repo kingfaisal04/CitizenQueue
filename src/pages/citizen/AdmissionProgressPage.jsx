@@ -40,7 +40,7 @@ export default function AdmissionProgressPage() {
     );
   }
 
-  const { currentStage, stages, compositeScore, activeAppointment, isReadyForReporting } = metrics;
+  const { currentStage, stages, compositeScore, activeAppointment } = metrics;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-8 animate-fade-in">

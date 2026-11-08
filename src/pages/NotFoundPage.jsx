@@ -23,7 +23,7 @@ export default function NotFoundPage() {
           Page Not Found
         </h1>
         <p className="text-sm text-slate-600 max-w-sm mx-auto">
-          The requested service page or administrative tool could not be located in our prototype.
+          The requested page or administrative resource could not be located. Please check the URL or return to your dashboard.
         </p>
       </div>
 

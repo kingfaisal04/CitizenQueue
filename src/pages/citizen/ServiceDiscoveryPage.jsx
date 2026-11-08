@@ -204,7 +204,7 @@ export default function ServiceDiscoveryPage() {
             No matching services found
           </h3>
           <p className="text-sm text-slate-500">
-            We couldn't find any demonstration services matching "{query}" in "{selectedCategory}". Try checking your spelling or clearing active filters.
+            We couldn't find any services matching "{query}" in "{selectedCategory}". Try checking your spelling or clearing active filters.
           </p>
           <button
             type="button"

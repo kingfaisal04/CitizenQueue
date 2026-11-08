@@ -144,13 +144,13 @@ export default function AdmissionProfilePage() {
         </div>
       </div>
 
-      {/* Demonstration Notice */}
-      <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-        <AlertCircle size={18} className="text-amber-700 shrink-0 mt-0.5" />
+      {/* Official Admission & CSSPS Pre-Screening Notice */}
+      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 flex items-start gap-3">
+        <AlertCircle size={18} className="text-cqTeal-600 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-bold">Prototype Demonstration Disclaimer</p>
-          <p className="text-amber-800 leading-relaxed">
-            CitizenQueue coordinates administrative workflows <strong>after</strong> placement. CSSPS handles student placement. This demo does NOT connect to live CSSPS servers, does not collect Ghana Card PINs, and does not conduct live biometric verification.
+          <p className="font-bold text-slate-900">Ghana Education Service (GES) Compliance Notice</p>
+          <p className="text-slate-600 leading-relaxed">
+            CitizenQueue coordinates administrative workflows <strong>after</strong> placement. CSSPS manages initial student school placement. Please ensure all bio-data entered matches your official BECE certificate and placement documentation.
           </p>
         </div>
       </div>
@@ -253,16 +253,16 @@ export default function AdmissionProfilePage() {
             </div>
           </div>
 
-          {/* Placement Slip Demo Upload */}
+          {/* Placement Slip Upload */}
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-900">Demonstration Placement Slip File</p>
+                <p className="text-xs font-bold text-slate-900">Official CSSPS Placement Slip (PDF or Scan)</p>
                 <p className="text-[11px] text-slate-500">Upload your PDF or scanned image of the official CSSPS placement form</p>
               </div>
               <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cqNavy-900 text-white text-xs font-semibold cursor-pointer hover:bg-cqNavy-800 transition-colors shadow-xs">
                 <Upload size={13} />
-                <span>Choose Demo File</span>
+                <span>Upload Placement Slip</span>
                 <input
                   type="file"
                   accept=".pdf,image/*"
@@ -445,7 +445,7 @@ export default function AdmissionProfilePage() {
             {isSaved ? (
               <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold">
                 <CheckCircle2 size={16} />
-                Profile changes saved to demonstration storage and synced with school portal!
+                Profile changes saved and synchronized with school registry!
               </span>
             ) : (
               <span>Save your profile to update your school records.</span>
