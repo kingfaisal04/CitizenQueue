@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cqNavy-50: #f0f5fa;
+  --color-cqNavy-100: #e1ebf5;
+  --color-cqNavy-200: #c5d8ec;
+  --color-cqNavy-300: #9bbfe0;
+  --color-cqNavy-400: #6aa0d1;
+  --color-cqNavy-500: #4683c0;
+  --color-cqNavy-600: #3168a6;
+  --color-cqNavy-700: #285387;
+  --color-cqNavy-800: #1d3e65;
+  --color-cqNavy-900: #0f2744;
+  --color-cqNavy-950: #0a192c;
+
+  --color-cqTeal-50: #f0fdfa;
+  --color-cqTeal-100: #ccfbf1;
+  --color-cqTeal-200: #99f6e4;
+  --color-cqTeal-300: #5eead4;
+  --color-cqTeal-400: #2dd4bf;
+  --color-cqTeal-500: #14b8a6;
+  --color-cqTeal-600: #0d9488;
+  --color-cqTeal-700: #0f766e;
+  --color-cqTeal-800: #115e59;
+  --color-cqTeal-900: #134e4a;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom fade animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+} 
