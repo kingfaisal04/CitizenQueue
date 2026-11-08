@@ -46,35 +46,59 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900 font-sans antialiased">
       
-      {/* Admin Top Header */}
+      {/* 1. Official Civic Top Bar */}
+      <div className="bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-900">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 truncate">
+            <span className="flex h-2 w-2 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cqTeal-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cqTeal-500" />
+            </span>
+            <span className="truncate text-slate-300">
+              <strong className="text-white font-semibold">Republic of Ghana</strong> • Senior High School Administrative Desk & Verification Terminal
+            </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-4 shrink-0 text-slate-300 text-[11px]">
+            <span className="text-slate-400">Desk Station: Verification Desk 3</span>
+            <span className="text-slate-600">|</span>
+            <Link
+              to="/dashboard"
+              onClick={loginAsCitizen}
+              className="text-xs font-semibold text-cqTeal-300 hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <ArrowLeft size={12} />
+              <span>Switch to Student View</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Admin Top Header */}
       <header className="bg-cqNavy-950 text-white border-b border-cqNavy-800 sticky top-0 z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-18">
             
             {/* Left: Admin Brand & Institution Indicator */}
             <div className="flex items-center gap-3">
-              <Link to="/admin" className="flex items-center gap-2.5 group">
-                <div className="w-9 h-9 rounded-xl bg-cqNavy-800 text-cqTeal-400 border border-cqNavy-700 flex items-center justify-center">
+              <Link to="/admin" className="flex items-center gap-3 group">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cqNavy-900 to-cqNavy-800 text-cqTeal-400 border border-cqNavy-700 flex items-center justify-center shadow-md">
                   <Shield size={18} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-black text-lg tracking-tight text-white">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-xl tracking-tight text-white">
                       Citizen<span className="text-cqTeal-400">Queue</span>
                     </span>
-                    <span className="text-[10px] uppercase font-bold tracking-tight px-2 py-0.5 rounded bg-cqNavy-800 text-cqTeal-300 border border-cqNavy-700">
-                      Staff Portal
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-cqNavy-800 text-cqTeal-300 border border-cqNavy-700">
+                      Staff Terminal
                     </span>
                   </div>
+                  <p className="text-[11px] font-medium text-slate-400 -mt-0.5 hidden sm:block">
+                    Achimota Senior High School Registry Desk
+                  </p>
                 </div>
               </Link>
-
-              <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-cqNavy-800 text-xs text-slate-300">
-                <School size={14} className="text-cqTeal-400" />
-                <span className="font-semibold text-white">
-                  Achimota Senior High School Desk
-                </span>
-              </div>
             </div>
 
             {/* Desktop Navigation Links */}
@@ -101,8 +125,8 @@ export default function AdminLayout() {
 
             {/* Right: Staff Identity & Switch back to Student / Citizen View */}
             <div className="hidden sm:flex items-center gap-3">
-              <span className="text-xs text-slate-300 font-medium px-2.5 py-1 rounded-lg bg-cqNavy-900 border border-cqNavy-800">
-                {currentUser?.name || 'Admissions Desk'}
+              <span className="text-xs text-slate-300 font-medium px-2.5 py-1 rounded-xl bg-cqNavy-900 border border-cqNavy-800">
+                {currentUser?.name || 'Admissions Officer Addo'}
               </span>
               <Link
                 to="/dashboard"
@@ -119,7 +143,7 @@ export default function AdminLayout() {
             <button
               type="button"
               onClick={() => setMobileAdminNavOpen(!mobileAdminNavOpen)}
-              className="xl:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-cqNavy-800"
+              className="xl:hidden p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-cqNavy-800 border border-cqNavy-800"
               aria-label="Toggle admin navigation"
             >
               {mobileAdminNavOpen ? <X size={20} /> : <Menu size={20} />}
@@ -129,13 +153,13 @@ export default function AdminLayout() {
 
         {/* Mobile Navigation Dropdown */}
         {mobileAdminNavOpen && (
-          <div className="xl:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-1 animate-fade-in">
-            <div className="pb-2 mb-2 border-b border-cqNavy-800 text-xs text-slate-300 flex items-center gap-2">
-              <School size={14} className="text-cqTeal-400" />
-              <span>Achimota Senior High School Admissions</span>
+          <div className="xl:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-2 animate-fade-in shadow-xl">
+            <div className="pb-2 mb-1 border-b border-cqNavy-800 text-xs text-slate-300 flex items-center justify-between">
+              <span className="font-semibold text-white">Achimota SHS Registry</span>
+              <span className="text-cqTeal-400 font-mono text-[11px]">Staff Terminal</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-1.5">
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 const Icon = item.icon;
@@ -144,9 +168,9 @@ export default function AdminLayout() {
                     key={item.name}
                     to={item.path}
                     onClick={() => setMobileAdminNavOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${
                       active
-                        ? 'bg-cqNavy-800 text-white font-bold'
+                        ? 'bg-cqNavy-800 text-white font-bold border border-cqNavy-700'
                         : 'text-slate-300 hover:text-white hover:bg-cqNavy-800'
                     }`}
                   >
@@ -164,7 +188,7 @@ export default function AdminLayout() {
                   setMobileAdminNavOpen(false);
                   loginAsCitizen();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-white bg-cqNavy-800 rounded-lg hover:bg-cqNavy-700"
+                className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-white bg-cqNavy-800 rounded-xl hover:bg-cqNavy-700"
               >
                 <ArrowLeft size={13} />
                 <span>Return to Student Portal View</span>
