@@ -100,16 +100,6 @@ export default function AdminDocumentReviewPage() {
     );
   };
 
-  // One-click quick accept directly from card
-  const handleQuickAccept = (doc) => {
-    AdmissionService.adminReviewDocument(doc.id, {
-      status: 'provisionally_accepted',
-      adminFeedback: 'Verified and provisionally approved by admissions officer.'
-    });
-    loadData();
-    showToast(`"${doc.name}" provisionally approved.`);
-  };
-
   // Filtered & Searched documents
   const filteredDocs = useMemo(() => {
     return documents.filter((doc) => {
