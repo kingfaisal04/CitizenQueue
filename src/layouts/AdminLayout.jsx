@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Camera,
   ShoppingBag,
   CalendarCheck,
   Clock,
@@ -31,8 +30,7 @@ export default function AdminLayout() {
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'Students', path: '/admin/students', icon: Users },
-    { name: 'Documents', path: '/admin/documents', icon: FileText },
-    { name: 'Item Photos', path: '/admin/items', icon: Camera },
+    { name: 'Document Verification', path: '/admin/documents', icon: FileText },
     { name: 'Prospectus', path: '/admin/prospectus', icon: ShoppingBag },
     { name: 'Appointments', path: '/admin/appointments', icon: CalendarCheck },
     { name: 'Capacity', path: '/admin/availability', icon: Clock }
@@ -80,7 +78,7 @@ export default function AdminLayout() {
           <div className="flex items-center justify-between h-16 sm:h-18">
             
             {/* Left: Admin Brand & Institution Indicator */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 ml-4">
               <Link to="/admin" className="flex items-center gap-3 group">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cqNavy-900 to-cqNavy-800 text-cqTeal-400 border border-cqNavy-700 flex items-center justify-center shadow-md">
                   <Shield size={18} />
@@ -90,9 +88,7 @@ export default function AdminLayout() {
                     <span className="font-black text-xl tracking-tight text-white">
                       Citizen<span className="text-cqTeal-400">Queue</span>
                     </span>
-                    <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-cqNavy-800 text-cqTeal-300 border border-cqNavy-700">
-                      Staff Terminal
-                    </span>
+
                   </div>
                   <p className="text-[11px] font-medium text-slate-400 -mt-0.5 hidden sm:block">
                     Achimota Senior High School Registry Desk

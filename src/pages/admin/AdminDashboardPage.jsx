@@ -14,7 +14,6 @@ import {
   CalendarCheck,
   FileText,
   ShoppingBag,
-  Camera,
   CheckCircle2,
   Clock,
   School,
@@ -29,14 +28,12 @@ import StatusBadge from '../../components/common/StatusBadge';
 export default function AdminDashboardPage() {
   const [students, setStudents] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [prospectusStatus, setProspectusStatus] = useState({});
   const [appointments, setAppointments] = useState([]);
   const [availability, setAvailability] = useState({});
 
   const loadAllData = () => {
     setStudents(AdmissionService.getAdmittedStudents());
     setDocuments(AdmissionService.getDocuments());
-    setProspectusStatus(AdmissionService.getStudentProspectusStatus());
     setAppointments(AppointmentService.getAll());
     setAvailability(Storage.getAvailability());
   };
@@ -56,14 +53,6 @@ export default function AdminDashboardPage() {
       (d) => d.status === 'submitted' || d.status === 'under_review'
     ).length;
     const docsChangesRequired = documents.filter((d) => d.status === 'changes_required').length;
-
-    // Item photo review metrics
-    let itemsAwaitingReview = 0;
-    let itemsChangesRequired = 0;
-    Object.values(prospectusStatus).forEach((st) => {
-      if (st.photoStatus === 'awaiting_review') itemsAwaitingReview++;
-      if (st.photoStatus === 'changes_required') itemsChangesRequired++;
-    });
 
     // Appointment and intake metrics
     const scheduledAppointments = appointments.filter(
@@ -91,28 +80,24 @@ export default function AdminDashboardPage() {
       readyForReporting,
       docsAwaitingReview,
       docsChangesRequired,
-      itemsAwaitingReview,
-      itemsChangesRequired,
       scheduledAppointments,
       completedRegistrations,
       totalCapacity,
       totalBooked,
       remainingCapacity: Math.max(0, totalCapacity - totalBooked)
     };
-  }, [students, documents, prospectusStatus, appointments, availability]);
+  }, [students, documents, appointments, availability]);
 
   // Bottleneck breakdown stages
   const bottlenecks = useMemo(() => {
     const profileStuck = students.filter((s) => !s.profileComplete).length;
     const docReviewStuck = stats.docsAwaitingReview;
-    const itemReviewStuck = stats.itemsAwaitingReview;
     const readyNotBooked = students.filter((s) => s.readinessScore >= 80 && !s.appointment).length;
     const checkedInPending = appointments.filter((a) => a.status === 'checked_in' || a.status === 'in_progress').length;
 
     return [
       { label: 'Incomplete Bio-data Profiles', count: profileStuck, color: 'text-amber-700 bg-amber-50', link: '/admin/students' },
       { label: 'Documents Awaiting Staff Verification', count: docReviewStuck, color: 'text-blue-700 bg-blue-50', link: '/admin/documents' },
-      { label: 'Prospectus Photos Awaiting Check', count: itemReviewStuck, color: 'text-purple-700 bg-purple-50', link: '/admin/items' },
       { label: 'Pre-Arrival Ready (No Slot Booked)', count: readyNotBooked, color: 'text-teal-700 bg-teal-50', link: '/admin/students' },
       { label: 'At Verification Desk Now', count: checkedInPending, color: 'text-emerald-700 bg-emerald-50', link: '/admin/appointments' }
     ];
@@ -142,14 +127,7 @@ export default function AdminDashboardPage() {
             className="px-4 py-2.5 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
           >
             <FileText size={14} />
-            <span>Review Documents ({stats.docsAwaitingReview})</span>
-          </Link>
-          <Link
-            to="/admin/items"
-            className="px-4 py-2.5 rounded-xl bg-purple-900 hover:bg-purple-800 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-          >
-            <Camera size={14} />
-            <span>Review Item Photos ({stats.itemsAwaitingReview})</span>
+            <span>Document Verification Desk ({stats.docsAwaitingReview})</span>
           </Link>
         </div>
       </div>
@@ -198,7 +176,7 @@ export default function AdminDashboardPage() {
               {stats.docsAwaitingReview + stats.itemsAwaitingReview}
             </span>
             <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full">
-              {stats.docsAwaitingReview} docs • {stats.itemsAwaitingReview} items
+              {stats.docsAwaitingReview} documents pending
             </span>
           </div>
           <p className="text-[11px] text-slate-400">Require administrator action</p>
@@ -302,23 +280,6 @@ export default function AdminDashboardPage() {
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     Verify placement slips, birth certificates and photos
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                to="/admin/items"
-                className="p-4 rounded-2xl border border-slate-200 hover:border-cqTeal-500 hover:bg-slate-50/50 transition-all flex items-start gap-3 group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                  <Camera size={18} />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cqTeal-700">
-                    Item Photo Review
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Inspect trunk dimensions, uniform cuts, and items
                   </p>
                 </div>
               </Link>

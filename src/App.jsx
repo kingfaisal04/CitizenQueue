@@ -45,7 +45,6 @@ import AdmissionProgressPage from './pages/citizen/AdmissionProgressPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminStudentsPage from './pages/admin/AdminStudentsPage';
 import AdminDocumentReviewPage from './pages/admin/AdminDocumentReviewPage';
-import AdminItemReviewPage from './pages/admin/AdminItemReviewPage';
 import AdminProspectusPage from './pages/admin/AdminProspectusPage';
 import AdminAppointmentsPage from './pages/admin/AdminAppointmentsPage';
 import AdminAvailabilityPage from './pages/admin/AdminAvailabilityPage';
@@ -111,7 +110,6 @@ export default function App() {
               <Route index element={<AdminDashboardPage />} />
               <Route path="students" element={<AdminStudentsPage />} />
               <Route path="documents" element={<AdminDocumentReviewPage />} />
-              <Route path="items" element={<AdminItemReviewPage />} />
               <Route path="prospectus" element={<AdminProspectusPage />} />
               <Route path="appointments" element={<AdminAppointmentsPage />} />
               <Route path="availability" element={<AdminAvailabilityPage />} />
