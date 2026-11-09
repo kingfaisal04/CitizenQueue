@@ -23,6 +23,7 @@ import AdminLayout from './layouts/AdminLayout';
 // Route Guards
 import ProtectedRoute from './components/common/ProtectedRoute';
 import RoleRoute from './components/common/RoleRoute';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Public & Citizen Pages
 import LandingPage from './pages/citizen/LandingPage';
@@ -60,10 +61,11 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <AppProvider>
-        <BrowserRouter>
-          <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <Routes>
             {/* 1. Public Portal Pages */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<LandingPage />} />
@@ -122,5 +124,6 @@ export default function App() {
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>
+  </ErrorBoundary>
   );
 }

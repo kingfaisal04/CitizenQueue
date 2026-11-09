@@ -28,6 +28,7 @@ import {
   Filter,
   Info,
   Check,
+  CheckSquare,
   X,
   ZoomIn
 } from 'lucide-react';
