@@ -414,6 +414,96 @@ export const AdmissionService = {
     return docs[index];
   },
 
+  /**
+   * Add a new document requirement
+   */
+  addDocumentRequirement: (docData) => {
+    const docs = Storage.getStudentDocuments();
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      name: docData.name.trim(),
+      category: docData.category || 'Academic Records',
+      required: docData.required !== undefined ? Boolean(docData.required) : true,
+      description: docData.description?.trim() || '',
+      status: docData.fileUrl ? (docData.status || 'submitted') : 'not_submitted',
+      fileName: docData.fileName || (docData.fileUrl ? `${docData.name.toLowerCase().replace(/\s+/g, '_')}.pdf` : null),
+      fileSize: docData.fileSize || (docData.fileUrl ? '1.2 MB' : null),
+      uploadedAt: docData.fileUrl ? (docData.uploadedAt || new Date().toISOString()) : null,
+      reviewedAt: null,
+      adminFeedback: null,
+      fileUrl: docData.fileUrl || null
+    };
+
+    const updated = [newDoc, ...docs];
+    Storage.setStudentDocuments(updated);
+    AdmissionService.syncStudentCohort();
+    return newDoc;
+  },
+
+  /**
+   * Update an existing document requirement
+   */
+  updateDocumentRequirement: (docId, updatedFields) => {
+    const docs = Storage.getStudentDocuments();
+    const index = docs.findIndex((d) => d.id === docId);
+    if (index === -1) return null;
+
+    docs[index] = {
+      ...docs[index],
+      ...updatedFields,
+      name: updatedFields.name !== undefined ? updatedFields.name.trim() : docs[index].name,
+      description: updatedFields.description !== undefined ? updatedFields.description.trim() : docs[index].description
+    };
+
+    Storage.setStudentDocuments(docs);
+    AdmissionService.syncStudentCohort();
+    return docs[index];
+  },
+
+  /**
+   * Delete a document requirement
+   */
+  deleteDocumentRequirement: (docId) => {
+    const docs = Storage.getStudentDocuments();
+    const filtered = docs.filter((d) => d.id !== docId);
+    Storage.setStudentDocuments(filtered);
+    AdmissionService.syncStudentCohort();
+    return true;
+  },
+
+  /**
+   * Batch review multiple documents simultaneously
+   */
+  adminBatchReviewDocuments: (docIds, { status, adminFeedback }) => {
+    const docs = Storage.getStudentDocuments();
+    const now = new Date().toISOString();
+    const notifs = Storage.getNotifications();
+    const newNotifs = [];
+
+    docs.forEach((doc) => {
+      if (docIds.includes(doc.id)) {
+        doc.status = status;
+        doc.reviewedAt = now;
+        doc.adminFeedback = adminFeedback || (status === 'provisionally_accepted' ? 'Provisionally approved by admissions desk.' : 'Correction required by admissions desk.');
+        newNotifs.push({
+          id: `notif-${Date.now()}-${doc.id}`,
+          title: status === 'provisionally_accepted' ? `Document Accepted: ${doc.name}` : `Correction Required: ${doc.name}`,
+          message: doc.adminFeedback,
+          date: now,
+          isRead: false,
+          type: status === 'provisionally_accepted' ? 'confirmation' : 'reminder'
+        });
+      }
+    });
+
+    Storage.setStudentDocuments(docs);
+    if (newNotifs.length > 0) {
+      Storage.setNotifications([...newNotifs, ...notifs]);
+    }
+    AdmissionService.syncStudentCohort();
+    return docs;
+  },
+
   // ==========================================================================
   // 5. READINESS CALCULATIONS & 9-STAGE ADMISSION PROGRESS
   // ==========================================================================
