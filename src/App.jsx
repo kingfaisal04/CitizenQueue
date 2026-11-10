@@ -10,7 +10,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { initializeStorage } from './services/storageService';
@@ -27,8 +27,6 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Public & Citizen Pages
 import LandingPage from './pages/citizen/LandingPage';
-import ServiceDiscoveryPage from './pages/citizen/ServiceDiscoveryPage';
-import ServiceDetailsPage from './pages/citizen/ServiceDetailsPage';
 import BookingPage from './pages/citizen/BookingPage';
 import BookingConfirmationPage from './pages/citizen/BookingConfirmationPage';
 import AppointmentDetailsPage from './pages/citizen/AppointmentDetailsPage';
@@ -69,8 +67,8 @@ export default function App() {
             {/* 1. Public Portal Pages */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/services" element={<ServiceDiscoveryPage />} />
-              <Route path="/services/:serviceId" element={<ServiceDetailsPage />} />
+              <Route path="/services" element={<Navigate to="/" replace />} />
+              <Route path="/services/:serviceId" element={<Navigate to="/" replace />} />
               <Route path="/book" element={<BookingPage />} />
               <Route path="/book/:serviceId" element={<BookingPage />} />
               <Route path="/booking-confirmation/:appointmentId" element={<BookingConfirmationPage />} />

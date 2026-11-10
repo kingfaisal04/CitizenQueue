@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, Home, Search } from 'lucide-react';
+import { Compass, Home, Calendar } from 'lucide-react';
 
 export default function NotFoundPage() {
   return (
@@ -36,11 +36,11 @@ export default function NotFoundPage() {
           <span>Go Home</span>
         </Link>
         <Link
-          to="/services"
+          to="/book"
           className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-cqTeal-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-cqTeal-700 shadow-xs"
         >
-          <Search size={16} />
-          <span>Find Services</span>
+          <Calendar size={16} />
+          <span>Reporting Schedule</span>
         </Link>
       </div>
     </div>

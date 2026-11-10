@@ -210,7 +210,7 @@ export default function LandingPage() {
       </section>
 
       {/* 4-STEP WORKFLOW JOURNEY */}
-      <section className="py-16 sm:py-24 bg-white border-b border-slate-200">
+      <section id="how-it-works" className="py-16 sm:py-24 bg-white border-b border-slate-200 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           <div className="text-center space-y-3 max-w-2xl mx-auto">
@@ -343,7 +343,7 @@ export default function LandingPage() {
       </section>
 
       {/* FREQUENTLY ASKED QUESTIONS */}
-      <section className="py-16 sm:py-24 bg-white border-b border-slate-200">
+      <section id="faq" className="py-16 sm:py-24 bg-white border-b border-slate-200 scroll-mt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           <div className="text-center space-y-2">
