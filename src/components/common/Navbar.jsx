@@ -1,11 +1,10 @@
 /**
  * CitizenQueue - Unified Public & Application Navigation Bar
  * 
- * Re-structured and redesigned for Ghanaian Senior High School admission orchestration:
- * - Public visitors: Clean institutional branding, 4 essential public sections (Overview,
- *   How It Works, Reporting Capacity, FAQs), and clear action CTAs (Sign In, Register Placement, Staff Desk).
- * - Authenticated candidates: Complete admission roadmap, readiness score, and account profile dropdown.
- * - Mobile responsive drawer with accessible touch targets.
+ * - Public Visitors: Minimalist, focused institutional navbar maintaining ONLY
+ *   the brand logo on the left and Candidate Sign In & Candidate Sign Up on the right.
+ * - Authenticated Candidates: Complete admission workflow navigation, readiness meter,
+ *   profile dropdown, and mobile navigation drawer.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -22,13 +21,11 @@ import {
   Shield,
   School,
   LogIn,
+  UserPlus,
   ChevronDown,
   LogOut,
   Phone,
-  CheckCircle2,
-  Layers,
-  HelpCircle,
-  ArrowRight
+  CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AdmissionService } from '../../services/admissionService';
@@ -63,25 +60,8 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' && !location.hash;
-    if (path.startsWith('/#')) return location.pathname === '/' && location.hash === path.replace('/', '');
+    if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
-  };
-
-  // Smooth scroll handler for anchor links
-  const handleAnchorClick = (e, href) => {
-    if (href.startsWith('/#')) {
-      const targetId = href.replace('/#', '');
-      if (location.pathname === '/') {
-        e.preventDefault();
-        const element = document.getElementById(targetId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', href);
-        }
-      }
-    }
-    setMobileMenuOpen(false);
   };
 
   // Authenticated candidate navigation links
@@ -93,16 +73,6 @@ export default function Navbar() {
     { name: 'Journey Timeline', href: '/progress', icon: TrendingUp },
     { name: 'Reporting Booking', href: '/book', icon: Calendar }
   ];
-
-  // Restructured Public visitor navigation links
-  const publicLinks = [
-    { name: 'Overview', href: '/', icon: School },
-    { name: 'How It Works', href: '/#how-it-works', icon: Layers },
-    { name: 'Reporting Capacity', href: '/book', icon: Calendar },
-    { name: 'FAQs', href: '/#faq', icon: HelpCircle }
-  ];
-
-  const currentNavLinks = isAuthenticated ? authenticatedLinks : publicLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full transition-all">
@@ -133,18 +103,6 @@ export default function Navbar() {
               <Phone size={11} className="text-cqTeal-400" />
               <span>Toll-Free Desk: 030 274 0000</span>
             </span>
-            {!isAuthenticated && (
-              <>
-                <span className="text-slate-600">|</span>
-                <Link
-                  to="/admin"
-                  className="text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1 transition-colors"
-                >
-                  <Shield size={12} className="text-cqTeal-400" />
-                  <span>Staff Desk</span>
-                </Link>
-              </>
-            )}
           </div>
 
         </div>
@@ -175,34 +133,35 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1">
-              {currentNavLinks.map((link) => {
-                const active = isActive(link.href);
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    onClick={(e) => handleAnchorClick(e, link.href)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      active
-                        ? 'text-cqNavy-950 bg-slate-100 font-bold border border-slate-200/80 shadow-2xs'
-                        : 'text-slate-600 hover:text-cqNavy-950 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon
-                      size={14}
-                      className={active ? 'text-cqTeal-600' : 'text-slate-400'}
-                    />
-                    <span>{link.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Desktop Navigation Links (Only for Authenticated Candidates) */}
+            {isAuthenticated && (
+              <nav className="hidden lg:flex items-center gap-1">
+                {authenticatedLinks.map((link) => {
+                  const active = isActive(link.href);
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        active
+                          ? 'text-cqNavy-950 bg-slate-100 font-bold border border-slate-200/80 shadow-2xs'
+                          : 'text-slate-600 hover:text-cqNavy-950 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon
+                        size={14}
+                        className={active ? 'text-cqTeal-600' : 'text-slate-400'}
+                      />
+                      <span>{link.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
-            {/* Desktop Right Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            {/* Right Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   
@@ -349,27 +308,15 @@ export default function Navbar() {
                   </div>
                 </div>
               ) : (
-                /* Restructured Public Right Actions */
-                <div className="flex items-center gap-2.5">
+                /* Public Actions: STRICTLY Candidate Sign In & Candidate Sign Up */
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   
-                  {/* Staff Desk Ghost Link */}
-                  <Link
-                    to="/admin"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-cqNavy-950 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200"
-                    title="Access School Administration & Verification Desk"
-                  >
-                    <Shield size={13} className="text-cqTeal-600" />
-                    <span>Staff Desk</span>
-                  </Link>
-
-                  <div className="h-5 w-px bg-slate-200 mx-0.5" />
-
-                  {/* Public Sign In */}
+                  {/* Candidate Sign In */}
                   <Link
                     to="/login"
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                       isActive('/login') || isActive('/signin')
-                        ? 'bg-slate-100 text-cqNavy-950 font-bold border border-slate-200'
+                        ? 'bg-slate-100 text-cqNavy-950 font-bold border border-slate-200 shadow-2xs'
                         : 'text-slate-700 hover:text-cqNavy-950 hover:bg-slate-50 border border-slate-200'
                     }`}
                   >
@@ -377,72 +324,72 @@ export default function Navbar() {
                     <span>Candidate Sign In</span>
                   </Link>
 
-                  {/* Public Register Placement CTA */}
+                  {/* Candidate Sign Up */}
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-xs bg-cqNavy-950 hover:bg-cqNavy-900 text-white hover:shadow-md"
+                    className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-xs bg-cqNavy-950 hover:bg-cqNavy-900 text-white hover:shadow-md"
                   >
-                    <span>Register Placement</span>
-                    <ArrowRight size={13} className="text-cqTeal-400" />
+                    <UserPlus size={13} className="text-cqTeal-400" />
+                    <span>Candidate Sign Up</span>
                   </Link>
 
                 </div>
               )}
-            </div>
 
-            {/* Mobile Hamburger Toggle Button */}
-            <div className="flex lg:hidden items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2.5 rounded-2xl text-slate-700 hover:bg-slate-100 transition-colors border border-slate-200/80"
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
+              {/* Mobile Hamburger Toggle Button (Only for Authenticated Candidates) */}
+              {isAuthenticated && (
+                <div className="flex lg:hidden items-center ml-1">
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="p-2 rounded-2xl text-slate-700 hover:bg-slate-100 transition-colors border border-slate-200/80"
+                    aria-label="Toggle navigation menu"
+                  >
+                    {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
         </div>
 
-        {/* 3. Mobile Dropdown Navigation Drawer */}
-        {mobileMenuOpen && (
+        {/* 3. Mobile Dropdown Navigation Drawer (Only for Authenticated Candidates) */}
+        {isAuthenticated && mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 pt-3 pb-6 space-y-4 animate-fade-in shadow-xl">
             
-            {/* Mobile Candidate Card if Authenticated */}
-            {isAuthenticated && (
-              <div className="p-3.5 bg-gradient-to-r from-cqNavy-950 to-cqNavy-900 text-white rounded-2xl flex items-center justify-between border border-cqNavy-800 shadow-sm">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-black text-white">
-                    {currentUser?.name || profile?.fullName || 'Candidate'}
-                  </p>
-                  <p className="text-[11px] text-cqTeal-300 font-medium truncate max-w-[200px]">
-                    {profile?.assignedSchool || 'Senior High School'}
+            {/* Mobile Candidate Card */}
+            <div className="p-3.5 bg-gradient-to-r from-cqNavy-950 to-cqNavy-900 text-white rounded-2xl flex items-center justify-between border border-cqNavy-800 shadow-sm">
+              <div className="space-y-0.5">
+                <p className="text-xs font-black text-white">
+                  {currentUser?.name || profile?.fullName || 'Candidate'}
+                </p>
+                <p className="text-[11px] text-cqTeal-300 font-medium truncate max-w-[200px]">
+                  {profile?.assignedSchool || 'Senior High School'}
+                </p>
+              </div>
+              {metrics && (
+                <div className="text-right">
+                  <span className="text-xs font-bold text-cqTeal-300">
+                    Stage {metrics.currentStage} of 9
+                  </span>
+                  <p className="text-[10px] text-slate-300">
+                    {metrics.compositeScore}% Ready
                   </p>
                 </div>
-                {metrics && (
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-cqTeal-300">
-                      Stage {metrics.currentStage} of 9
-                    </span>
-                    <p className="text-[10px] text-slate-300">
-                      {metrics.compositeScore}% Ready
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Navigation Links List */}
             <div className="grid grid-cols-1 gap-1">
-              {currentNavLinks.map((link) => {
+              {authenticatedLinks.map((link) => {
                 const active = isActive(link.href);
                 const Icon = link.icon;
                 return (
                   <Link
                     key={link.name}
                     to={link.href}
-                    onClick={(e) => handleAnchorClick(e, link.href)}
+                    onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                       active
                         ? 'text-cqNavy-950 bg-slate-100 font-bold border border-slate-200'
@@ -458,67 +405,33 @@ export default function Navbar() {
 
             {/* Mobile Actions Area */}
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-              {isAuthenticated ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      if (isAdmin) {
-                        loginAsCitizen();
-                      } else {
-                        loginAsAdmin();
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-cqNavy-950 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
-                  >
-                    <Shield size={14} className="text-cqTeal-600" />
-                    <span>{isAdmin ? 'Switch to Student View' : 'Switch to Staff Desk'}</span>
-                  </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (isAdmin) {
+                    loginAsCitizen();
+                  } else {
+                    loginAsAdmin();
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-cqNavy-950 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
+              >
+                <Shield size={14} className="text-cqTeal-600" />
+                <span>{isAdmin ? 'Switch to Student View' : 'Switch to Staff Desk'}</span>
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors"
-                  >
-                    <LogOut size={14} />
-                    <span>Sign Out</span>
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white hover:bg-slate-50 shadow-2xs"
-                    >
-                      <LogIn size={13} className="text-slate-500" />
-                      <span>Candidate Sign In</span>
-                    </Link>
-                    <Link
-                      to="/register"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-cqNavy-950 text-white text-xs font-bold shadow-xs hover:bg-cqNavy-900"
-                    >
-                      <span>Register Placement</span>
-                      <ArrowRight size={13} className="text-cqTeal-400" />
-                    </Link>
-                  </div>
-
-                  <Link
-                    to="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:text-cqNavy-950 hover:bg-slate-50"
-                  >
-                    <Shield size={13} className="text-cqTeal-600" />
-                    <span>School Staff Desk Access</span>
-                  </Link>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors"
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
             </div>
 
           </div>
