@@ -13,17 +13,13 @@ import {
   CalendarCheck,
   FileCheck2,
   Users,
-  ShieldCheck,
   Building2,
   ArrowRight,
   CheckCircle2,
-  Sparkles,
   School,
   ShoppingBag,
   ChevronDown,
-  Search,
-  Clock,
-  Check
+  Search
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -137,15 +133,15 @@ export default function LandingPage() {
 
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight max-w-4xl mx-auto leading-[1.1]">
-            Report to Senior High School Without the{' '}
+            Seamless Senior High School Admissions,{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cqTeal-300 via-cqTeal-400 to-emerald-400">
-              4:00 AM Queues.
+              Calm, Orderly & Queue-Free.
             </span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Coordinate digital prospectus items, submit admission documents for preliminary review, and reserve your reporting arrival slot after receiving your CSSPS placement.
+            From CSSPS placement to campus reporting — pre-verify your credentials online, coordinate your digital prospectus checklist, and reserve a scheduled arrival intake window with total peace of mind.
           </p>
 
           {/* Quick BECE Placement Lookup Box */}
