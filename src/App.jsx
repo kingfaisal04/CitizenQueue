@@ -24,6 +24,7 @@ import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import RoleRoute from './components/common/RoleRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Public & Citizen Pages
 import LandingPage from './pages/citizen/LandingPage';
@@ -63,6 +64,7 @@ export default function App() {
       <AuthProvider>
         <AppProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
             {/* 1. Public Portal Pages */}
             <Route element={<PublicLayout />}>
