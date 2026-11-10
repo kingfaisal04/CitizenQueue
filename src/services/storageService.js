@@ -30,6 +30,7 @@ const KEYS = {
   STUDENT_PROSPECTUS_STATUS: 'citizenqueue_student_prospectus_status',
   STUDENT_DOCUMENTS: 'citizenqueue_student_documents',
   ADMITTED_STUDENTS: 'citizenqueue_admitted_students',
+  STAFF_PROFILES: 'citizenqueue_staff_profiles',
   INITIALIZED: 'citizenqueue_initialized_v2_1'
 };
 
@@ -151,5 +152,8 @@ export const Storage = {
   setStudentDocuments: (data) => safeSetItem(KEYS.STUDENT_DOCUMENTS, data),
 
   getAdmittedStudents: () => safeGetItem(KEYS.ADMITTED_STUDENTS, INITIAL_ADMITTED_STUDENTS),
-  setAdmittedStudents: (data) => safeSetItem(KEYS.ADMITTED_STUDENTS, data)
+  setAdmittedStudents: (data) => safeSetItem(KEYS.ADMITTED_STUDENTS, data),
+
+  getStaffProfiles: () => safeGetItem(KEYS.STAFF_PROFILES, []),
+  setStaffProfiles: (data) => safeSetItem(KEYS.STAFF_PROFILES, data)
 };

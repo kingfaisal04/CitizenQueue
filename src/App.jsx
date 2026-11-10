@@ -49,6 +49,7 @@ import AdminProspectusPage from './pages/admin/AdminProspectusPage';
 import AdminAppointmentsPage from './pages/admin/AdminAppointmentsPage';
 import AdminAvailabilityPage from './pages/admin/AdminAvailabilityPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminRegisterPage from './pages/admin/AdminRegisterPage';
 
 // Fallback Page
 import NotFoundPage from './pages/NotFoundPage';
@@ -79,6 +80,8 @@ export default function App() {
               <Route path="/signin" element={<SignInPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/signup" element={<RegisterPage />} />
+              <Route path="/admin/register" element={<AdminRegisterPage />} />
+              <Route path="/staff/register" element={<AdminRegisterPage />} />
             </Route>
 
             {/* 2. Admitted Student & Guardian Portal (Protected by Auth & Student Role) */}

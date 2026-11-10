@@ -520,6 +520,21 @@ export default function RegisterPage() {
             </Link>
           </div>
 
+          {/* School Staff Registration Card */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-1.5">
+            <p className="text-xs text-slate-600">
+              Are you a school administrator or housemaster?
+            </p>
+            <Link
+              to="/admin/register"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-cqNavy-950 hover:text-cqTeal-700 hover:underline"
+            >
+              <Shield size={13} className="text-cqTeal-600" />
+              <span>Register Institutional Staff Profile</span>
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+
         </div>
 
       </div>

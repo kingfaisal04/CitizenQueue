@@ -303,10 +303,21 @@ export default function SignInPage() {
 
         {/* Link to Register */}
         <p className="text-center text-xs text-slate-500">
-          Haven't created an admission profile yet?{' '}
-          <Link to="/register" className="font-bold text-cqTeal-700 hover:text-cqTeal-800 underline">
-            Register your placement
-          </Link>
+          {activeRole === 'admin' ? (
+            <span>
+              First-time school officer or housemaster?{' '}
+              <Link to="/admin/register" className="font-bold text-cqNavy-950 hover:text-cqTeal-700 underline">
+                Set up staff desk profile
+              </Link>
+            </span>
+          ) : (
+            <span>
+              Haven't created an admission profile yet?{' '}
+              <Link to="/register" className="font-bold text-cqTeal-700 hover:text-cqTeal-800 underline">
+                Register your placement
+              </Link>
+            </span>
+          )}
         </p>
       </div>
     </div>

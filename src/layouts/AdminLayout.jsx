@@ -91,7 +91,7 @@ export default function AdminLayout() {
 
                   </div>
                   <p className="text-[11px] font-medium text-slate-400 -mt-0.5 hidden sm:block">
-                    Achimota Senior High School Registry Desk
+                    {currentUser?.institutionName || currentUser?.schoolName || 'Achimota Senior High School'} Registry Desk
                   </p>
                 </div>
               </Link>
@@ -121,9 +121,14 @@ export default function AdminLayout() {
 
             {/* Right: Staff Identity & Switch back to Student / Citizen View */}
             <div className="hidden sm:flex items-center gap-3">
-              <span className="text-xs text-slate-300 font-medium px-2.5 py-1 rounded-xl bg-cqNavy-900 border border-cqNavy-800">
-                {currentUser?.name || 'Admissions Officer Addo'}
-              </span>
+              <div className="text-right hidden md:block">
+                <p className="text-xs font-bold text-white truncate max-w-[170px]">
+                  {currentUser?.name || 'Admissions Officer Addo'}
+                </p>
+                <p className="text-[10px] text-cqTeal-300 truncate max-w-[170px]">
+                  {currentUser?.designation || 'Admissions Desk'}
+                </p>
+              </div>
               <Link
                 to="/dashboard"
                 onClick={loginAsCitizen}

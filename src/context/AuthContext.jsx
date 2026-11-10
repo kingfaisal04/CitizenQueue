@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AdmissionService } from '../services/admissionService';
+import { Storage } from '../services/storageService';
 import { authService } from '../services/authService';
 import { ROLES } from '../utils/constants';
 
@@ -65,24 +66,71 @@ export function AuthProvider({ children }) {
     if (typeof officerDataOrInstName === 'object' && officerDataOrInstName !== null) {
       user = {
         role: ROLES.ADMIN,
-        name: officerDataOrInstName.name || 'Admissions Officer Addo',
+        name: officerDataOrInstName.name || officerDataOrInstName.fullName || 'Admissions Officer Addo',
+        fullName: officerDataOrInstName.fullName || officerDataOrInstName.name || 'Admissions Officer Addo',
+        title: officerDataOrInstName.title || 'Mr.',
+        designation: officerDataOrInstName.designation || 'Admissions Officer',
+        staffId: officerDataOrInstName.staffId || 'GES-482910',
+        phone: officerDataOrInstName.phone || '+233 24 000 1122',
         email: officerDataOrInstName.email || 'admissions-desk@achimota.edu.gh',
         institutionId: officerDataOrInstName.institutionId || 'inst-1',
-        institutionName: officerDataOrInstName.institutionName || 'Achimota Senior High School'
+        institutionName: officerDataOrInstName.institutionName || officerDataOrInstName.schoolName || 'Achimota Senior High School',
+        department: officerDataOrInstName.department || 'Admissions Directorate'
       };
     } else {
       user = {
         role: ROLES.ADMIN,
         name: 'Admissions Officer Addo',
+        fullName: 'Admissions Officer Addo',
+        title: 'Mr.',
+        designation: 'Admissions Officer',
+        staffId: 'GES-482910',
+        phone: '+233 24 000 1122',
         email: 'admissions-desk@achimota.edu.gh',
         institutionId: 'inst-1',
-        institutionName: officerDataOrInstName || 'Achimota Senior High School'
+        institutionName: officerDataOrInstName || 'Achimota Senior High School',
+        department: 'Admissions Directorate'
       };
     }
     const mockToken = `demo_jwt_admin_${Date.now()}`;
     authService.setToken(mockToken);
     setToken(mockToken);
     setCurrentUser(user);
+  };
+
+  const registerStaff = (staffData) => {
+    // 1. Persist staff in storage list
+    const currentStaffList = Storage.getStaffProfiles();
+    const formattedName = `${staffData.title ? staffData.title + ' ' : ''}${staffData.fullName}`.trim();
+    const newStaffEntry = {
+      id: `staff-${Date.now()}`,
+      name: formattedName,
+      fullName: staffData.fullName,
+      title: staffData.title || 'Mr.',
+      staffId: staffData.staffId || `GES-${Math.floor(100000 + Math.random() * 900000)}`,
+      email: staffData.email,
+      phone: staffData.phone,
+      schoolName: staffData.schoolName || 'Achimota Senior High School',
+      institutionName: staffData.schoolName || 'Achimota Senior High School',
+      institutionId: staffData.institutionId || 'inst-1',
+      designation: staffData.designation || 'Admissions Officer',
+      department: staffData.department || 'Admissions Directorate',
+      registeredAt: new Date().toISOString()
+    };
+
+    const existingIdx = currentStaffList.findIndex(
+      (s) => (s.email && s.email.toLowerCase() === staffData.email.toLowerCase()) || s.staffId === staffData.staffId
+    );
+    if (existingIdx !== -1) {
+      currentStaffList[existingIdx] = { ...currentStaffList[existingIdx], ...newStaffEntry };
+    } else {
+      currentStaffList.unshift(newStaffEntry);
+    }
+    Storage.setStaffProfiles(currentStaffList);
+
+    // 2. Log in directly as admin with these credentials
+    loginAsAdmin(newStaffEntry);
+    return newStaffEntry;
   };
 
   const registerCandidate = (candidateData) => {
@@ -121,6 +169,7 @@ export function AuthProvider({ children }) {
         loginAsCitizen,
         loginAsAdmin,
         registerCandidate,
+        registerStaff,
         logout,
         hasRole,
         isStudent: currentUser?.role === ROLES.STUDENT,
