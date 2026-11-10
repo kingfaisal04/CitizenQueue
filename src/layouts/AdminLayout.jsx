@@ -15,7 +15,6 @@ import {
   CalendarCheck,
   Clock,
   ArrowLeft,
-  School,
   Menu,
   X,
   Shield
@@ -122,11 +121,11 @@ export default function AdminLayout() {
             {/* Right: Staff Identity & Switch back to Student / Citizen View */}
             <div className="hidden sm:flex items-center gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-xs font-bold text-white truncate max-w-[170px]">
-                  {currentUser?.name || 'Admissions Officer Addo'}
+                <p className="text-[10px] uppercase font-extrabold tracking-wider text-cqTeal-300 truncate max-w-[190px]">
+                  {currentUser?.designation || 'Admissions Officer'}
                 </p>
-                <p className="text-[10px] text-cqTeal-300 truncate max-w-[170px]">
-                  {currentUser?.designation || 'Admissions Desk'}
+                <p className="text-xs font-bold text-white truncate max-w-[190px] -mt-0.5">
+                  {currentUser?.name || 'Staff Member'}
                 </p>
               </div>
               <Link
@@ -156,8 +155,17 @@ export default function AdminLayout() {
         {mobileAdminNavOpen && (
           <div className="xl:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-2 animate-fade-in shadow-xl">
             <div className="pb-2 mb-1 border-b border-cqNavy-800 text-xs text-slate-300 flex items-center justify-between">
-              <span className="font-semibold text-white">Achimota SHS Registry</span>
-              <span className="text-cqTeal-400 font-mono text-[11px]">Staff Terminal</span>
+              <div>
+                <p className="text-[10px] uppercase font-extrabold tracking-wider text-cqTeal-400">
+                  {currentUser?.designation || 'Admissions Officer'}
+                </p>
+                <p className="font-bold text-white text-xs -mt-0.5">
+                  {currentUser?.name || 'Staff Member'}
+                </p>
+              </div>
+              <span className="text-slate-400 text-[11px] font-mono bg-cqNavy-800 px-2 py-0.5 rounded border border-cqNavy-700">
+                {currentUser?.staffId || 'Staff Terminal'}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-1.5">
