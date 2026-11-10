@@ -640,7 +640,7 @@ export const INITIAL_PROSPECTUS = [
     targetGender: "boy",
     category: "Clothing and Uniforms",
     specification: "Standard school khaki brown, straight cut, no bell bottoms, 2 pairs.",
-    description: "Required for regular daily academic sessions. Must conform to school tailoring specifications.",
+    description: "Tailored to school specifications to augment the official government-issued classroom sets.",
     quantity: "2 pairs",
     requiresPhotoReview: false,
     referenceNotes: "Tailored to sit comfortably on waistline. Turn-ups not permitted."
@@ -648,7 +648,7 @@ export const INITIAL_PROSPECTUS = [
   {
     id: "pr-102",
     schoolId: "inst-1",
-    name: "White Short-Sleeved Shirts",
+    name: "White Short-Sleeved Shirts (Boys)",
     targetGender: "boy",
     category: "Clothing and Uniforms",
     specification: "Plain white poplin or tetron material, school crest embroidered on left pocket.",
@@ -658,21 +658,9 @@ export const INITIAL_PROSPECTUS = [
     referenceNotes: "Available also through authorized on-campus PTA stores."
   },
   {
-    id: "pr-103",
-    schoolId: "inst-1",
-    name: "Official House Jersey & Shorts",
-    targetGender: "all",
-    category: "Clothing and Uniforms",
-    specification: "Designated house colour jersey (Livingstone / Cadbury / Gyamfi) with sports shorts.",
-    description: "For inter-house sports, morning physical training and Saturday compound inspection.",
-    quantity: "1 set",
-    requiresPhotoReview: false,
-    referenceNotes: "House assigned upon arrival verification."
-  },
-  {
     id: "pr-104",
     schoolId: "inst-1",
-    name: "Black Low-Heeled Leather Shoes",
+    name: "Black Low-Heeled Leather Shoes (Boys)",
     targetGender: "boy",
     category: "Clothing and Uniforms",
     specification: "Polished plain black leather, lace-up or monk strap, low heels, no buckles or decorative studs.",
@@ -680,6 +668,18 @@ export const INITIAL_PROSPECTUS = [
     quantity: "1 pair",
     requiresPhotoReview: false,
     referenceNotes: "Ensure comfortable fit for walking between classroom blocks."
+  },
+  {
+    id: "pr-125",
+    schoolId: "inst-1",
+    name: "Black Cotton Socks (Boys)",
+    targetGender: "boy",
+    category: "Clothing and Uniforms",
+    specification: "Plain black cotton socks, calf-length, no stripes or logos.",
+    description: "For classroom wear with black leather shoes.",
+    quantity: "3 pairs",
+    requiresPhotoReview: false,
+    referenceNotes: "Worn strictly with formal black shoes."
   },
   {
     id: "pr-105",
@@ -718,6 +718,30 @@ export const INITIAL_PROSPECTUS = [
     referenceNotes: "Placed under bedsheet."
   },
   {
+    id: "pr-121",
+    schoolId: "inst-1",
+    name: "Single Bed Blanket / Quilt",
+    targetGender: "all",
+    category: "Bedding",
+    specification: "Standard single bunk fleece blanket or light quilt, plain dark blue or brown.",
+    description: "For chilly nights during the rainy and harmattan seasons.",
+    quantity: "1 piece",
+    requiresPhotoReview: false,
+    referenceNotes: "Clean and neatly folded across foot of bed during morning inspection."
+  },
+  {
+    id: "pr-122",
+    schoolId: "inst-1",
+    name: "Standard Sleeping Pillow",
+    targetGender: "all",
+    category: "Bedding",
+    specification: "Comfortable standard size foam or synthetic fiber pillow with plain white cover.",
+    description: "Personal sleeping pillow for dormitory bunk.",
+    quantity: "1 piece",
+    requiresPhotoReview: false,
+    referenceNotes: "Must fit the provided white pillowcases."
+  },
+  {
     id: "pr-108",
     schoolId: "inst-1",
     name: "Approved Metal Trunk",
@@ -740,6 +764,18 @@ export const INITIAL_PROSPECTUS = [
     quantity: "1 piece",
     requiresPhotoReview: false,
     referenceNotes: "Must be clearly labeled with student full name using indelible marker."
+  },
+  {
+    id: "pr-123",
+    schoolId: "inst-1",
+    name: "Durable Padlocks with Duplicate Keys",
+    targetGender: "all",
+    category: "Storage Items",
+    specification: "Medium-sized brass or hardened steel padlocks (30mm-40mm) with duplicate keys.",
+    description: "For securing the metal trunk, chop box, and dormitory locker.",
+    quantity: "3 units",
+    requiresPhotoReview: false,
+    referenceNotes: "Keep spare keys safely stored or deposited with housemaster."
   },
   {
     id: "pr-110",
@@ -790,6 +826,18 @@ export const INITIAL_PROSPECTUS = [
     referenceNotes: "Must be standard WAEC approved model."
   },
   {
+    id: "pr-127",
+    schoolId: "inst-1",
+    name: "General Stationery & Writing Pack",
+    targetGender: "all",
+    category: "Academic Materials",
+    specification: "Pack of blue and black ballpoint pens, 2B/HB pencils, pencil sharpener, eraser, and 30cm transparent ruler.",
+    description: "Daily classroom and prep writing materials.",
+    quantity: "1 pack",
+    requiresPhotoReview: false,
+    referenceNotes: "Keep in a pencil case."
+  },
+  {
     id: "pr-114",
     schoolId: "inst-1",
     name: "Cutlass & Hoe for Compound Maintenance",
@@ -800,6 +848,18 @@ export const INITIAL_PROSPECTUS = [
     quantity: "1 cutlass + 1 hoe",
     requiresPhotoReview: false,
     referenceNotes: "Stored safely in house equipment stores upon physical reporting."
+  },
+  {
+    id: "pr-128",
+    schoolId: "inst-1",
+    name: "Scrubbing Brush & Soft Broom",
+    targetGender: "all",
+    category: "Other School Requirements",
+    specification: "Hard bristle wooden scrubbing brush and standard local broom for room and corridor cleaning.",
+    description: "For Saturday dorm compound work and personal cubicle hygiene.",
+    quantity: "1 brush + 1 broom",
+    requiresPhotoReview: false,
+    referenceNotes: "Label with student name."
   },
   {
     id: "pr-115",
@@ -814,12 +874,24 @@ export const INITIAL_PROSPECTUS = [
     referenceNotes: "Heels must be flat and non-slip."
   },
   {
+    id: "pr-124",
+    schoolId: "inst-1",
+    name: "Bathroom Slippers / Flip-Flops",
+    targetGender: "all",
+    category: "Clothing and Uniforms",
+    specification: "Durable rubber flip-flops for bathroom and laundry washrooms.",
+    description: "Strictly for bathroom, laundry, and dormitory use.",
+    quantity: "1 pair",
+    requiresPhotoReview: false,
+    referenceNotes: "Not permitted in classroom areas or dining hall."
+  },
+  {
     id: "pr-116",
     schoolId: "inst-1",
-    name: "School Uniform Dresses / Pinafores",
+    name: "School Uniform Dresses / Pinafores (Girls)",
     targetGender: "girl",
     category: "Clothing and Uniforms",
-    specification: "Official school check fabric, knee-length, straight cut, 2 pairs.",
+    specification: "Official school check fabric, knee-length, straight cut, 2 pairs to augment government allocation.",
     description: "Required for regular classroom lessons. Tailored strictly to knee length.",
     quantity: "2 pairs",
     requiresPhotoReview: false,
@@ -828,7 +900,7 @@ export const INITIAL_PROSPECTUS = [
   {
     id: "pr-117",
     schoolId: "inst-1",
-    name: "White Short-Sleeved Blouses",
+    name: "White Short-Sleeved Blouses (Girls)",
     targetGender: "girl",
     category: "Clothing and Uniforms",
     specification: "Plain white poplin or tetron material with school crest on left collar.",
@@ -848,6 +920,18 @@ export const INITIAL_PROSPECTUS = [
     quantity: "1 pair",
     requiresPhotoReview: false,
     referenceNotes: "No high heels or fancy buckles."
+  },
+  {
+    id: "pr-126",
+    schoolId: "inst-1",
+    name: "White Ankle Socks (Girls)",
+    targetGender: "girl",
+    category: "Clothing and Uniforms",
+    specification: "Plain white cotton ankle socks, no lace or colored decorations.",
+    description: "Worn with classroom uniform and black flat leather shoes.",
+    quantity: "3 pairs",
+    requiresPhotoReview: false,
+    referenceNotes: "Must be clean and folded at ankle."
   },
   {
     id: "pr-119",
@@ -872,6 +956,117 @@ export const INITIAL_PROSPECTUS = [
     quantity: "1 pack",
     requiresPhotoReview: false,
     referenceNotes: "Conforms to Achimota grooming policy."
+  }
+];
+
+/**
+ * Items Provided Free by Government of Ghana / GES (Free SHS Policy)
+ * Admitted candidates receive these items upon arrival on campus at zero charge.
+ */
+export const GES_FREE_PROSPECTUS_ITEMS = [
+  {
+    id: "ges-free-1",
+    name: "Official School Classroom Uniforms",
+    category: "Uniforms & School Wear",
+    specification: "2 complete sets of official school uniforms (fabric / tailored sets with school crest). Issued on campus.",
+    description: "Compulsory daily uniform for regular classroom instruction, morning assemblies, and academic sessions.",
+    quantity: "2 sets",
+    providedBy: "Government of Ghana / GES Free SHS Secretariat",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "School Stores / Senior Housemaster Desk",
+    targetGender: "all",
+    referenceNotes: "Do NOT buy uniforms from informal vendors outside campus."
+  },
+  {
+    id: "ges-free-2",
+    name: "Official House Sports Jersey & Shorts",
+    category: "Uniforms & School Wear",
+    specification: "Official house-colour jersey and sports shorts for morning exercise, inter-house sports, and Saturday inspections.",
+    description: "Issued according to assigned boarding house upon arrival verification.",
+    quantity: "1 set",
+    providedBy: "School Sports Department (Free SHS Allocation)",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "Sports Department upon House Allocation",
+    targetGender: "all",
+    referenceNotes: "House allocation is assigned during physical reporting."
+  },
+  {
+    id: "ges-free-3",
+    name: "Official School Friday Cloth (African Print)",
+    category: "Uniforms & School Wear",
+    specification: "Official school anniversary / Friday African print wear for ceremonial and Friday worship wear.",
+    description: "Designated institutional Friday attire provided under harmonised policy.",
+    quantity: "1 set",
+    providedBy: "GES Harmonised Provision Scheme",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "School Stores",
+    targetGender: "all",
+    referenceNotes: "Tailored to school approved pattern."
+  },
+  {
+    id: "ges-free-4",
+    name: "Core Curriculum Textbooks (Set of 4)",
+    category: "Academic Textbooks & Books",
+    specification: "Standard textbooks for English Language, Core Mathematics, Integrated Science, and Social Studies.",
+    description: "Supplied on 3-year retention/loan scheme for all students.",
+    quantity: "4 textbooks",
+    providedBy: "Ministry of Education Book Scheme",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "School Library / Book Distribution Desk",
+    targetGender: "all",
+    referenceNotes: "Must be handled carefully and returned upon completion of WASSCE."
+  },
+  {
+    id: "ges-free-5",
+    name: "School Exercise Books & Note Books",
+    category: "Academic Textbooks & Books",
+    specification: "Official school-crested exercise books for daily classroom assignments and lecture notes.",
+    description: "Termly notebook allocation provided free by Free SHS Secretariat.",
+    quantity: "1 term pack",
+    providedBy: "Free SHS Secretariat",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "Class Tutors upon Registration",
+    targetGender: "all",
+    referenceNotes: "Distributed directly in classroom blocks."
+  },
+  {
+    id: "ges-free-6",
+    name: "Physical Education (PE) Kit",
+    category: "Uniforms & School Wear",
+    specification: "Breathable cotton PE t-shirt and athletic shorts with official school crest.",
+    description: "For physical education practicals and sporting activities.",
+    quantity: "1 kit",
+    providedBy: "School Physical Education Department",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "Sports Store",
+    targetGender: "all",
+    referenceNotes: "Supplied during physical education orientation."
+  },
+  {
+    id: "ges-free-7",
+    name: "Boarding Accommodation & 3 Daily Meals",
+    category: "Boarding & Welfare Provisions",
+    specification: "Dormitory bed allocation and three balanced daily meals in the dining hall for boarding students.",
+    description: "100% funded under the National Buffer Stock and Free SHS policy.",
+    quantity: "Full academic cycle",
+    providedBy: "National Food Buffer Stock Company / GES",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "Assigned Boarding House & Dining Hall",
+    targetGender: "all",
+    referenceNotes: "Zero dining or boarding utility fees charged."
+  },
+  {
+    id: "ges-free-8",
+    name: "Tuition, Examination & Library Access",
+    category: "Boarding & Welfare Provisions",
+    specification: "Comprehensive tuition, continuous assessments, school exam fees, and digital/physical library access.",
+    description: "Complete abolition of admission fees, tuition charges, and PTA exam levies.",
+    quantity: "Full academic year",
+    providedBy: "Ghana Education Service",
+    cost: "GH₵ 0.00 (Free)",
+    distributionPoint: "Academic Affairs Division",
+    targetGender: "all",
+    referenceNotes: "Completely covered by the Government of Ghana."
   }
 ];
 

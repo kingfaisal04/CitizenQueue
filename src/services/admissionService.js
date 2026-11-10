@@ -12,7 +12,7 @@
 
 import { Storage } from './storageService';
 import { AppointmentService } from './appointmentService';
-import { ADMISSION_STAGES } from '../data/mockData';
+import { ADMISSION_STAGES, GES_FREE_PROSPECTUS_ITEMS } from '../data/mockData';
 
 export const AdmissionService = {
   // ==========================================================================
@@ -104,10 +104,17 @@ export const AdmissionService = {
   // ==========================================================================
 
   /**
-   * Get master school prospectus requirements
+   * Get master school prospectus requirements (items to purchase/bring)
    */
   getProspectus: () => {
     return Storage.getProspectus();
+  },
+
+  /**
+   * Get items provided free of charge by Ghana Education Service (Free SHS policy)
+   */
+  getGesFreeItems: () => {
+    return GES_FREE_PROSPECTUS_ITEMS;
   },
 
   /**

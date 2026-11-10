@@ -78,6 +78,23 @@ export function initializeStorage() {
     safeSetItem(KEYS.STUDENT_DOCUMENTS, INITIAL_STUDENT_DOCUMENTS);
     safeSetItem(KEYS.ADMITTED_STUDENTS, INITIAL_ADMITTED_STUDENTS);
     localStorage.setItem(KEYS.INITIALIZED, 'true');
+  } else {
+    // Ensure newly defined prospectus items are merged if master list was expanded
+    try {
+      const stored = safeGetItem(KEYS.PROSPECTUS, []);
+      if (Array.isArray(stored) && stored.length < INITIAL_PROSPECTUS.length) {
+        const existingIds = new Set(stored.map((p) => p.id));
+        const merged = [...stored];
+        INITIAL_PROSPECTUS.forEach((item) => {
+          if (!existingIds.has(item.id)) {
+            merged.push(item);
+          }
+        });
+        safeSetItem(KEYS.PROSPECTUS, merged);
+      }
+    } catch {
+      // Ignore sync error
+    }
   }
 }
 
