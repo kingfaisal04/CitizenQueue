@@ -133,15 +133,15 @@ export default function LandingPage() {
 
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight max-w-4xl mx-auto leading-[1.1]">
-            Seamless Senior High School Admissions,{' '}
+            Senior High School Admissions,{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cqTeal-300 via-cqTeal-400 to-emerald-400">
-              Calm, Orderly & Queue-Free.
+              Simplified.
             </span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            From CSSPS placement to campus reporting — pre-verify your credentials online, coordinate your digital prospectus checklist, and reserve a scheduled arrival intake window with total peace of mind.
+          <p className="text-base sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+            Verify credentials, check your prospectus, and reserve your reporting slot in minutes.
           </p>
 
           {/* Quick BECE Placement Lookup Box */}
