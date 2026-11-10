@@ -21,6 +21,31 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Convert full institutional staff roles into concise badges that fit cleanly on the navbar
+ */
+const getShortRole = (role) => {
+  if (!role) return 'Staff';
+  const lower = role.toLowerCase();
+
+  if (lower.includes('admissions') || lower.includes('placement')) return 'Admissions';
+  if (lower.includes('senior housemaster') || lower.includes('senior housemistress')) return 'Sr. Housemaster';
+  if (lower.includes('housemaster') || lower.includes('housemistress')) return 'Housemaster';
+  if (lower.includes('registrar')) return 'Registrar';
+  if (lower.includes('assistant head') || lower.includes('asst. head')) return 'Asst. Head';
+  if (lower.includes('verification') || lower.includes('document')) return 'Verifier';
+  if (lower.includes('principal') || lower.includes('headmaster') || lower.includes('headmistress')) return 'Headmaster';
+  if (lower.includes('bursar') || lower.includes('finance')) return 'Bursar';
+  if (lower.includes('nurse') || lower.includes('health') || lower.includes('medical')) return 'Health Officer';
+  if (lower.includes('admin')) return 'Admin';
+
+  const firstPart = role.split(/[/&]/)[0].trim();
+  if (firstPart.length > 14) {
+    return firstPart.slice(0, 13) + '…';
+  }
+  return firstPart || 'Staff';
+};
+
 export default function AdminLayout() {
   const location = useLocation();
   const { currentUser, loginAsCitizen } = useAuth();
@@ -121,10 +146,10 @@ export default function AdminLayout() {
             {/* Right: Staff Identity & Switch back to Student / Citizen View */}
             <div className="hidden sm:flex items-center gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-[10px] uppercase font-extrabold tracking-wider text-cqTeal-300 truncate max-w-[190px]">
-                  {currentUser?.designation || 'Admissions Officer'}
-                </p>
-                <p className="text-xs font-bold text-white truncate max-w-[190px] -mt-0.5">
+                <span className="inline-block text-[9px] uppercase font-extrabold tracking-wider text-cqTeal-300 bg-cqNavy-900/90 px-1.5 py-0.5 rounded border border-cqNavy-700/80">
+                  {getShortRole(currentUser?.designation || currentUser?.role)}
+                </span>
+                <p className="text-xs font-bold text-white truncate max-w-[160px] mt-0.5">
                   {currentUser?.name || 'Staff Member'}
                 </p>
               </div>
@@ -156,10 +181,10 @@ export default function AdminLayout() {
           <div className="xl:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-2 animate-fade-in shadow-xl">
             <div className="pb-2 mb-1 border-b border-cqNavy-800 text-xs text-slate-300 flex items-center justify-between">
               <div>
-                <p className="text-[10px] uppercase font-extrabold tracking-wider text-cqTeal-400">
-                  {currentUser?.designation || 'Admissions Officer'}
-                </p>
-                <p className="font-bold text-white text-xs -mt-0.5">
+                <span className="inline-block text-[9px] uppercase font-extrabold tracking-wider text-cqTeal-300 bg-cqNavy-800 px-1.5 py-0.5 rounded border border-cqNavy-700">
+                  {getShortRole(currentUser?.designation || currentUser?.role)}
+                </span>
+                <p className="font-bold text-white text-xs mt-0.5">
                   {currentUser?.name || 'Staff Member'}
                 </p>
               </div>
