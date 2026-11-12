@@ -123,9 +123,9 @@ export default function Navbar() {
                   <span className="font-black text-xl sm:text-2xl tracking-tight text-cqNavy-950 font-sans">
                     Citizen<span className="text-cqTeal-600">Queue</span>
                   </span>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-cqTeal-50 text-cqTeal-800 border border-cqTeal-200/80 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                  {/* <span className="text-[10px] font-extrabold uppercase tracking-wider bg-cqTeal-50 text-cqTeal-800 border border-cqTeal-200/80 px-2 py-0.5 rounded-md hidden sm:inline-block">
                     SHS ADMISSIONS
-                  </span>
+                  </span> */}
                 </div>
                 <p className="text-[11px] font-medium text-slate-500 -mt-0.5 hidden sm:block">
                   Pre-Arrival Verification & Capacity Orchestration
