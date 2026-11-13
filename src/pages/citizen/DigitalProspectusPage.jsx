@@ -279,21 +279,22 @@ export default function DigitalProspectusPage() {
         </div>
       </div>
 
-      {/* 2. Primary Segment Switcher: Items to Bring vs GES Free Items */}
+      {/* 2. Primary Segment Switcher: Items to Bring vs GES Free Items (Responsive) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-2xs">
         <div className="grid grid-cols-2 gap-1.5 flex-1 max-w-xl">
           <button
             type="button"
             onClick={() => setActiveTab('to_bring')}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'to_bring'
                 ? 'bg-cqNavy-950 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
-            <span>🎒 Items Students Must Bring</span>
+            <span className="hidden sm:inline">🎒 Items Students Must Bring</span>
+            <span className="sm:hidden">🎒 Items to Bring</span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+              className={`text-[10px] px-1.5 py-0.2 rounded-md shrink-0 ${
                 activeTab === 'to_bring' ? 'bg-cqNavy-800 text-cqTeal-300' : 'bg-slate-200 text-slate-600'
               }`}
             >
@@ -304,16 +305,17 @@ export default function DigitalProspectusPage() {
           <button
             type="button"
             onClick={() => setActiveTab('ges_free')}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'ges_free'
                 ? 'bg-cqNavy-950 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
-            <Gift size={13} className={activeTab === 'ges_free' ? 'text-emerald-400' : 'text-slate-500'} />
-            <span>Provided Free by GES</span>
+            <Gift size={13} className={activeTab === 'ges_free' ? 'text-emerald-400 shrink-0' : 'text-slate-500 shrink-0'} />
+            <span className="hidden sm:inline">Provided Free by GES</span>
+            <span className="sm:hidden">Free by GES</span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+              className={`text-[10px] px-1.5 py-0.2 rounded-md shrink-0 ${
                 activeTab === 'ges_free' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-800'
               }`}
             >

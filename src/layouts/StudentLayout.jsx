@@ -248,9 +248,9 @@ export default function StudentLayout() {
             </div>
           </div>
 
-          {/* Bottom Row: Segmented Navigation Control Strip (Desktop) */}
-          <div className="hidden md:block pb-3 pt-0">
-            <nav className="flex items-center gap-1.5 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/70 overflow-x-auto">
+          {/* Bottom Row: Segmented Navigation Control Strip (Responsive on all screen sizes) */}
+          <div className="pb-2.5 sm:pb-3 pt-0 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+            <nav className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/70 min-w-max md:min-w-0">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -258,14 +258,14 @@ export default function StudentLayout() {
                     key={item.path}
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
+                      `flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap shrink-0 ${
                         isActive
                           ? 'bg-white text-cqNavy-950 font-bold shadow-xs border border-slate-200/80'
                           : 'text-slate-600 hover:text-cqNavy-950 hover:bg-white/60'
                       }`
                     }
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
                     <span>{item.name}</span>
                   </NavLink>
                 );

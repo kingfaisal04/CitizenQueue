@@ -121,8 +121,8 @@ export default function AdminLayout() {
               </Link>
             </div>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden xl:flex items-center gap-1">
+            {/* Desktop Navigation Links (Responsive) */}
+            <nav className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 const Icon = item.icon;
@@ -130,14 +130,14 @@ export default function AdminLayout() {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       active
                         ? 'bg-cqNavy-800 text-white font-bold border border-cqNavy-700 shadow-xs'
                         : 'text-slate-300 hover:text-white hover:bg-cqNavy-900'
                     }`}
                   >
                     <Icon size={14} className={active ? 'text-cqTeal-400' : 'text-slate-400'} />
-                    {item.name}
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
@@ -168,7 +168,7 @@ export default function AdminLayout() {
             <button
               type="button"
               onClick={() => setMobileAdminNavOpen(!mobileAdminNavOpen)}
-              className="xl:hidden p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-cqNavy-800 border border-cqNavy-800"
+              className="lg:hidden p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-cqNavy-800 border border-cqNavy-800"
               aria-label="Toggle admin navigation"
             >
               {mobileAdminNavOpen ? <X size={20} /> : <Menu size={20} />}
@@ -178,7 +178,7 @@ export default function AdminLayout() {
 
         {/* Mobile Navigation Dropdown */}
         {mobileAdminNavOpen && (
-          <div className="xl:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-2 animate-fade-in shadow-xl">
+          <div className="lg:hidden bg-cqNavy-900 border-t border-cqNavy-800 px-4 py-3 space-y-2 animate-fade-in shadow-xl">
             <div className="pb-2 mb-1 border-b border-cqNavy-800 text-xs text-slate-300 flex items-center justify-between">
               <div>
                 <span className="inline-block text-[9px] uppercase font-extrabold tracking-wider text-cqTeal-300 bg-cqNavy-800 px-1.5 py-0.5 rounded border border-cqNavy-700">

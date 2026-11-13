@@ -308,8 +308,8 @@ export default function Navbar() {
                   </div>
                 </div>
               ) : (
-                /* Public Actions: STRICTLY Candidate Sign In & Candidate Sign Up */
-                <div className="flex items-center gap-2 sm:gap-2.5">
+                /* Public Actions: STRICTLY Candidate Sign In & Candidate Sign Up (Hidden on mobile devices) */
+                <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
                   
                   {/* Candidate Sign In */}
                   <Link

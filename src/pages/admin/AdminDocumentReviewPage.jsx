@@ -542,13 +542,13 @@ export default function AdminDocumentReviewPage() {
         
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
-          {/* Status Filter Segmented Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+          {/* Status Filter Segmented Buttons (Responsive on mobile and desktop) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full lg:w-auto -mx-1 px-1 sm:mx-0 sm:px-0">
             {[
-              { id: 'all', label: 'All Documents', count: totalCount },
-              { id: 'pending', label: 'Awaiting Verification', count: pendingCount, highlight: 'amber' },
-              { id: 'changes', label: 'Corrections Required', count: changesCount, highlight: 'rose' },
-              { id: 'accepted', label: 'Provisionally Approved', count: acceptedCount, highlight: 'emerald' }
+              { id: 'all', label: 'All Documents', shortLabel: 'All', count: totalCount },
+              { id: 'pending', label: 'Awaiting Verification', shortLabel: 'Awaiting', count: pendingCount, highlight: 'amber' },
+              { id: 'changes', label: 'Corrections Required', shortLabel: 'Corrections', count: changesCount, highlight: 'rose' },
+              { id: 'accepted', label: 'Provisionally Approved', shortLabel: 'Approved', count: acceptedCount, highlight: 'emerald' }
             ].map((tab) => {
               const active = filterStatus === tab.id;
               return (
@@ -556,13 +556,14 @@ export default function AdminDocumentReviewPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setFilterStatus(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
                     active
                       ? 'bg-cqNavy-950 text-white shadow-xs font-bold'
                       : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
                   }`}
                 >
-                  <span>{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
                     active
                       ? 'bg-cqNavy-800 text-cqTeal-300'
