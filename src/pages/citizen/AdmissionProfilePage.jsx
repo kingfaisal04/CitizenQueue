@@ -159,10 +159,10 @@ export default function AdmissionProfilePage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* Section 1: Assigned School & Placement (CSSPS Context) */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cqNavy-50 text-cqNavy-900 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-cqNavy-50 text-cqNavy-900 flex items-center justify-center shrink-0">
                 <School size={20} />
               </div>
               <div>
@@ -170,7 +170,7 @@ export default function AdmissionProfilePage() {
                 <p className="text-xs text-slate-500">Placement details received from CSSPS for the 2026 Academic Cycle</p>
               </div>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto shrink-0">
               Placement Confirmed
             </span>
           </div>
@@ -253,51 +253,104 @@ export default function AdmissionProfilePage() {
             </div>
           </div>
 
-          {/* Placement Slip Upload */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">Official CSSPS Placement Slip (PDF or Scan)</p>
-                <p className="text-[11px] text-slate-500">Upload your PDF or scanned image of the official CSSPS placement form</p>
+          {/* Official CSSPS Placement Slip Upload (Responsive & Mobile-Structured) */}
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
+            {/* Header + Action Area */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cqTeal-50 border border-cqTeal-200/70 text-cqTeal-700 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-2xs">
+                  <FileText className="w-5 h-5 text-cqTeal-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                      Official CSSPS Placement Slip
+                    </p>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cqTeal-700 bg-cqTeal-50 border border-cqTeal-200/70 px-2 py-0.5 rounded-md">
+                      PDF or Scan
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                    Upload your digital PDF or scanned image of the official CSSPS placement form
+                  </p>
+                </div>
               </div>
-              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cqNavy-900 text-white text-xs font-semibold cursor-pointer hover:bg-cqNavy-800 transition-colors shadow-xs">
-                <Upload size={13} />
-                <span>Upload Placement Slip</span>
-                <input
-                  type="file"
-                  accept=".pdf,image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
+
+              {/* Upload Action Button (shown when no file is uploaded yet) */}
+              {!placementFilePreview && (
+                <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 active:scale-[0.98] text-white text-xs font-bold cursor-pointer transition-all shadow-xs shrink-0 border border-cqNavy-850">
+                  <Upload size={14} className="text-cqTeal-400" />
+                  <span>Upload Placement Slip</span>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
+            {/* File State Display */}
             {placementFilePreview ? (
-              <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 text-xs">
-                <div className="flex items-center gap-2 text-slate-800 font-medium">
-                  <FileText size={16} className="text-cqTeal-600" />
-                  <span>{placementFilePreview}</span>
-                  <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-bold">
-                    Attached
-                  </span>
+              <div className="p-3 sm:p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-8 h-8 rounded-lg bg-cqTeal-50 border border-cqTeal-100 text-cqTeal-600 flex items-center justify-center shrink-0">
+                    <FileText size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-xs font-bold text-slate-900 truncate"
+                      title={placementFilePreview}
+                    >
+                      {placementFilePreview}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 shrink-0">
+                        <CheckCircle2 size={10} className="text-emerald-500" />
+                        Attached
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Ready for verification
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveFile}
-                  className="text-rose-600 hover:text-rose-800 p-1 rounded-md transition-colors"
-                  title="Remove file"
-                >
-                  <Trash2 size={14} />
-                </button>
+
+                {/* File Action Controls */}
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 w-full sm:w-auto justify-end">
+                  <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-cqNavy-950 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors border border-slate-200">
+                    <Upload size={12} className="text-slate-500" />
+                    <span>Change</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors border border-rose-200/60"
+                    title="Remove attached file"
+                  >
+                    <Trash2 size={12} />
+                    <span>Remove</span>
+                  </button>
+                </div>
               </div>
             ) : (
-              <p className="text-[11px] text-slate-400 italic">No placement file uploaded yet.</p>
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/80 rounded-xl border border-dashed border-slate-200 text-slate-500 text-[11px]">
+                <AlertCircle size={13} className="text-slate-400 shrink-0" />
+                <span className="truncate">No file uploaded yet. Formats: PDF, JPG, PNG (Max 5MB)</span>
+              </div>
             )}
           </div>
         </div>
 
         {/* Section 2: Student Bio-data */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-cqNavy-50 text-cqNavy-900 flex items-center justify-center">
               <User size={20} />
@@ -375,7 +428,7 @@ export default function AdmissionProfilePage() {
         </div>
 
         {/* Section 3: Parent / Guardian Details */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-cqNavy-50 text-cqNavy-900 flex items-center justify-center">
               <Shield size={20} />
