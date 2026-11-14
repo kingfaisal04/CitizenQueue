@@ -12,13 +12,11 @@ const startServer = async () => {
     }
 
     const server = app.listen(PORT, () => {
-      console.log(`=======================================================`);
       console.log(` CITIZENQUEUE SECURE BACKEND SERVICE IS RUNNING`);
       console.log(` Environment : ${process.env.NODE_ENV || 'development'}`);
       console.log(` Port        : ${PORT}`);
       console.log(` Healthcheck : http://localhost:${PORT}/health`);
       console.log(` API Base    : http://localhost:${PORT}/api/v1`);
-      console.log(`=======================================================`);
     });
 
     // Graceful Shutdown Handlers
