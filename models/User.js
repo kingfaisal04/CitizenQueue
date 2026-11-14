@@ -43,6 +43,7 @@ const UserSchema = new mongoose.Schema(
         'citizen',
         'student',
         'admin',
+        'school_admin',
         'academic_officer',
         'housemaster',
         'registrar',
@@ -98,7 +99,21 @@ const UserSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.refreshTokens;
+        return ret;
+      }
+    },
+    toObject: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.refreshTokens;
+        return ret;
+      }
+    }
   }
 );
 

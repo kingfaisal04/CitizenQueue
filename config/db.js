@@ -1,4 +1,12 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+// Ensure robust SRV resolution on Windows environments
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Ignore if permissions disallow setting custom DNS
+}
 
 let isConnected = false;
 
@@ -14,9 +22,9 @@ export const connectDB = async (uri = process.env.MONGO_URI) => {
   try {
     const conn = await mongoose.connect(uri, {
       maxPoolSize: 20,
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
-      autoIndex: process.env.NODE_ENV !== 'production'
+      autoIndex: process.env.NODE_ENV !== 'production',
     });
 
     isConnected = conn.connections[0].readyState === 1;

@@ -24,6 +24,8 @@ const router = express.Router();
 router.use(authenticate);
 
 router.post('/request', validate(requestRecordSchema), requestRecord);
+router.post('/requests', validate(requestRecordSchema), requestRecord);
+router.get('/requests', getMyRequests);
 router.get('/my', getMyRequests);
 router.get('/:requestId', getRequestDetails);
 router.get('/:requestId/clearance', getClearances);

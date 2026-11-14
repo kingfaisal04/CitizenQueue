@@ -1,13 +1,11 @@
 # CitizenQueue: Frontend-to-Backend Architecture & API Mapping
-**Author:** Senior Backend & Security Architect  
+**Author:** Mohammed Faisal Adamu Yusif  
 **Project:** CitizenQueue — Ghanaian Educational Admission & Institutional Queue Orchestration Platform  
 **Target Environment:** Node.js/Express on Render + MongoDB Atlas; Frontend on Vercel  
 
----
+## 1. Executive Architecture Overview 
 
-## 1. Executive Architecture Overview
-
-CitizenQueue digitizes the post-placement administrative intake, document validation, digital prospectus verification, and reporting appointment scheduling for Ghanaian Senior High Schools (SHS) and tertiary institutions following the Computerized School Selection & Placement System (CSSPS) cycle.
+CitizenQueue digitizes the post-placement administrative intake, document validation, digital prospectus verification, and reporting appointment scheduling for Ghanaian Senior High Schools (SHS) and Technical and Vocational Education and Training Centers (TVET)following the Computerized School Selection & Placement System (CSSPS) cycle.
 
 ### Frontend Topology & Communication Pattern
 - **Framework:** React 19 + Vite 8 + Tailwind CSS v4.
@@ -54,8 +52,8 @@ CitizenQueue digitizes the post-placement administrative intake, document valida
 - **Request Payload:**
   ```json
   {
-    "fullName": "Emmanuel Mensah",
-    "beceIndexNumber": "101245089",
+    "fullName": "Mohammed Faisal",
+    "beceIndexNumber": "030360616",
     "dateOfBirth": "2010-04-15",
     "gender": "Male",
     "assignedSchoolId": "inst-1",
@@ -63,10 +61,10 @@ CitizenQueue digitizes the post-placement administrative intake, document valida
     "residentialStatus": "Boarding",
     "aggregateScore": "08",
     "juniorHighSchool": "St. Theresa's Basic School, Kaneshie",
-    "guardianName": "Kwame Mensah",
+    "guardianName": "Adamu Al-Hassan Yusif",
     "guardianRelation": "Father",
-    "guardianPhone": "+233 24 411 2233",
-    "guardianEmail": "kwame.mensah@example.com",
+    "guardianPhone": "+233 54 297 0043",
+    "guardianEmail": "adamu1@example.com",
     "homeTown": "Kasoa, Central Region",
     "pin": "2026",
     "confirmPin": "2026"
@@ -80,8 +78,8 @@ CitizenQueue digitizes the post-placement administrative intake, document valida
       "user": {
         "id": "6735e1...",
         "role": "citizen",
-        "name": "Emmanuel Mensah",
-        "email": "kwame.mensah@example.com",
+        "name": "Mohammed Faisal",
+        "email": "adamu1@example.com",
         "phone": "+233 24 411 2233",
         "schoolId": "inst-1",
         "schoolName": "Achimota Senior High School",

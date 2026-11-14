@@ -7,81 +7,73 @@ const ServiceSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      index: true
+      index: true,
     },
     school: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'School',
       default: null,
-      index: true
+      index: true,
     },
     schoolId: {
       type: String,
       required: true,
       trim: true,
-      index: true
+      index: true,
     },
     institutionName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     category: {
       type: String,
       required: true,
-      enum: [
-        'Admissions & Enrollment',
-        'Records & Certification',
-        'Identity & Registration',
-        'Health & Clearance',
-        'General Administration'
-      ],
-      default: 'Admissions & Enrollment',
-      index: true
+      index: true,
     },
     description: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     location: {
       type: String,
-      default: 'Administration Block'
+      default: 'Administration Block',
     },
     durationMinutes: {
       type: Number,
-      default: 20
+      default: 20,
     },
     isActive: {
       type: Boolean,
       default: true,
-      index: true
+      index: true,
     },
     hasAvailability: {
       type: Boolean,
-      default: true
+      default: true,
     },
     delayNotice: {
       type: String,
-      default: null
+      default: null,
     },
     requirements: [{ type: String }],
     instructions: {
       type: String,
-      default: 'Please arrive 10 minutes before your scheduled slot.'
+      default: 'Please arrive 10 minutes before your scheduled slot.',
     },
     cancellationPolicy: {
       type: String,
-      default: 'Appointments may be rescheduled or cancelled up to 2 hours before the scheduled slot.'
-    }
+      default: 'Appointments may be rescheduled or cancelled up to 2 hours before the scheduled slot.',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 

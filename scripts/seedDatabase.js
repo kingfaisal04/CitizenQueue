@@ -100,7 +100,7 @@ const SEED_SERVICES = [
     institutionId: 'inst-1',
     institutionName: 'Achimota Senior High School',
     name: 'Student Biometric Identity Capture & Enrolment',
-    category: 'Identity Verification',
+    category: 'Identity & Registration',
     description: 'Digital photograph and biometric enrolment for issuance of permanent institutional smart identity card.',
     location: 'ICT Center, Lab 2, Workstation B',
     durationMinutes: 15,

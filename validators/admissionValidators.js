@@ -16,9 +16,22 @@ export const updateAdmissionStatusSchema = z.object({
 });
 
 export const updateStudentProfileSchema = z.object({
+  fullName: z.string().optional(),
+  gender: z.string().optional(),
+  dateOfBirth: z.string().optional(),
   programme: z.string().optional(),
   residentialStatus: z.enum(['Day', 'Boarding']).optional(),
   academicYear: z.string().optional(),
+  aggregateScore: z.union([z.string(), z.number()]).optional(),
+  juniorHighSchool: z.string().optional(),
+  homeTown: z.string().optional(),
+  guardianName: z.string().optional(),
+  guardianPhone: z.string().optional(),
+  guardianEmail: z.string().optional(),
+  guardianRelation: z.string().optional(),
+  notes: z.string().optional(),
+  placementSlipUploaded: z.boolean().optional(),
+  placementSlipFileName: z.string().nullable().optional(),
   guardianInfo: z.object({
     name: z.string().optional(),
     relationship: z.string().optional(),
