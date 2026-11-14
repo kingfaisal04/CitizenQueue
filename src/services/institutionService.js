@@ -1,24 +1,56 @@
 /**
  * CitizenQueue - Institution Service Layer
  * 
- * Centralized access to educational institutions in the demonstration.
+ * Provides live integration with backend School API endpoints:
+ * - GET /schools
+ * - GET /schools/:schoolId
  */
 
-import { Storage } from './storageService';
+import { apiClient } from './api/apiClient';
+
+let cachedSchools = [];
 
 export const InstitutionService = {
   /**
-   * Get all institutions
+   * Get all institutions from API
    */
-  getAll: () => {
-    return Storage.getInstitutions();
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const endpoint = query ? `/schools?${query}` : '/schools';
+    const res = await apiClient.get(endpoint);
+    if (res.success && Array.isArray(res.data)) {
+      cachedSchools = res.data.map((school) => ({
+        ...school,
+        id: school.schoolId || school._id
+      }));
+      return cachedSchools;
+    }
+    return cachedSchools;
   },
+
+  /**
+   * Synchronous cached getter for backward compatibility
+   */
+  getCachedList: () => cachedSchools,
 
   /**
    * Find an institution by its unique ID
    */
-  getById: (id) => {
-    const list = Storage.getInstitutions();
-    return list.find((inst) => inst.id === id) || null;
+  getById: async (id) => {
+    if (!id) return null;
+    const cached = cachedSchools.find((inst) => inst.schoolId === id || inst.id === id || inst._id === id);
+    if (cached) return cached;
+
+    const res = await apiClient.get(`/schools/${id}`);
+    if (res.success && res.data) {
+      const school = {
+        ...res.data,
+        id: res.data.schoolId || res.data._id
+      };
+      return school;
+    }
+    return null;
   }
 };
+
+export default InstitutionService;

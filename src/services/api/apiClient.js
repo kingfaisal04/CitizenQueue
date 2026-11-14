@@ -1,35 +1,50 @@
 /**
- * CitizenQueue - Unified API Client & Demo Adapter Interface
+ * CitizenQueue - Centralized Production API Client
  * 
- * Provides an asynchronous contract matching production REST APIs.
- * When API_CONFIG.USE_BACKEND is false, it transparently routes requests to
- * the client-side storage adapter with simulated network delay.
- * When switched to true, it dispatches real HTTP fetch() requests to the backend.
+ * Provides unified HTTP request dispatching, automatic JWT header injection,
+ * HttpOnly cookie credential forwarding, 401 token refresh retry,
+ * standardized operational error mapping, and timeout protection.
  */
 
 import { API_CONFIG } from '../../utils/constants';
 
+let inMemoryToken = null;
+let isRefreshing = null;
+
+export const setClientToken = (token) => {
+  inMemoryToken = token;
+  try {
+    if (token) {
+      sessionStorage.setItem('cq_access_token', token);
+    } else {
+      sessionStorage.removeItem('cq_access_token');
+    }
+  } catch (e) {
+    // SessionStorage may be restricted in private browsing
+  }
+};
+
+export const getClientToken = () => {
+  if (inMemoryToken) return inMemoryToken;
+  try {
+    return sessionStorage.getItem('cq_access_token');
+  } catch {
+    return null;
+  }
+};
+
 /**
- * Standardized API response format
- * @param {any} data - Payload on success
- * @param {string|null} error - Error message on failure
- * @param {number} status - HTTP status code (200, 201, 400, 401, 404, 500)
+ * Standardized API response structure matching backend envelope
  */
 export function createApiResponse(data = null, error = null, status = 200) {
   return {
     success: !error && status >= 200 && status < 300,
     data,
-    error,
+    error: error ? String(error) : null,
     status,
     timestamp: new Date().toISOString()
   };
 }
-
-/**
- * Simulates network latency for demo interactions to provide realistic UI state (loaders, spinners)
- */
-export const delay = (ms = API_CONFIG.SIMULATE_NETWORK_DELAY_MS) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Unified HTTP Request Dispatcher
@@ -40,47 +55,111 @@ export async function request(endpoint, options = {}) {
     body = null,
     headers = {},
     requiresAuth = true,
-    localFallbackHandler = null
+    timeoutMs = API_CONFIG.TIMEOUT_MS || 15000,
+    _isRetry = false
   } = options;
 
-  // 1. If configured to use live backend, execute real fetch()
-  if (API_CONFIG.USE_BACKEND) {
-    try {
-      const token = localStorage.getItem('cq_auth_token');
-      const authHeaders = requiresAuth && token ? { Authorization: `Bearer ${token}` } : {};
+  const baseUrl = (API_CONFIG.BASE_URL || 'http://localhost:5000/api/v1').replace(/\/+$/, '');
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const fullUrl = `${baseUrl}${cleanEndpoint}`;
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-          ...headers
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
+  // AbortController for network timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const responseData = await response.json();
-      if (!response.ok) {
-        return createApiResponse(null, responseData.message || 'API request failed', response.status);
+  try {
+    const token = getClientToken();
+    const authHeaders = requiresAuth && token ? { Authorization: `Bearer ${token}` } : {};
+
+    const isFormData = body instanceof FormData;
+    const requestHeaders = {
+      ...authHeaders,
+      ...headers
+    };
+
+    if (!isFormData && body && !requestHeaders['Content-Type']) {
+      requestHeaders['Content-Type'] = 'application/json';
+    }
+
+    const fetchOptions = {
+      method,
+      headers: requestHeaders,
+      credentials: 'include', // Include HttpOnly cookies for refresh token exchange
+      signal: controller.signal,
+      body: isFormData ? body : (body ? JSON.stringify(body) : undefined)
+    };
+
+    const response = await fetch(fullUrl, fetchOptions);
+    clearTimeout(timeoutId);
+
+    // 401 Unauthorized handling & automatic token refresh
+    if (response.status === 401 && requiresAuth && !_isRetry && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      try {
+        if (!isRefreshing) {
+          isRefreshing = fetch(`${baseUrl}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          }).then((res) => (res.ok ? res.json() : null));
+        }
+
+        const refreshResult = await isRefreshing;
+        isRefreshing = null;
+
+        if (refreshResult && refreshResult.data && refreshResult.data.accessToken) {
+          setClientToken(refreshResult.data.accessToken);
+          // Replay original request with refreshed token
+          return await request(endpoint, { ...options, _isRetry: true });
+        }
+      } catch (refreshErr) {
+        isRefreshing = null;
       }
-      return createApiResponse(responseData.data ?? responseData, null, response.status);
-    } catch (err) {
-      return createApiResponse(null, err.message || 'Network connectivity error', 500);
-    }
-  }
 
-  // 2. Demo Adapter: Simulate brief async delay and execute local fallback
-  await delay();
-  if (typeof localFallbackHandler === 'function') {
-    try {
-      const result = await localFallbackHandler();
-      return createApiResponse(result, null, 200);
-    } catch (err) {
-      return createApiResponse(null, err.message || 'Local execution failed', 400);
+      // If refresh failed, clear session and notify
+      setClientToken(null);
+      window.dispatchEvent(new CustomEvent('cq:session_expired'));
+      return createApiResponse(null, 'Session expired. Please log in again.', 401);
     }
-  }
 
-  return createApiResponse(null, 'No local fallback handler specified for demo mode', 404);
+    // Parse response
+    let responseData = null;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      responseData = await response.json();
+    } else {
+      const text = await response.text();
+      responseData = { message: text };
+    }
+
+    if (!response.ok) {
+      const errorMessage =
+        responseData?.error ||
+        responseData?.message ||
+        (Array.isArray(responseData?.data?.details)
+          ? responseData.data.details.map((d) => d.message).join(', ')
+          : 'Request failed');
+
+      return createApiResponse(null, errorMessage, response.status);
+    }
+
+    // Backend returns { success, data, error, status }
+    const unwrappedData = responseData?.data !== undefined ? responseData.data : responseData;
+    return createApiResponse(unwrappedData, null, response.status);
+  } catch (err) {
+    clearTimeout(timeoutId);
+
+    if (err.name === 'AbortError') {
+      return createApiResponse(null, 'Request timed out. Please check your network connection.', 408);
+    }
+
+    return createApiResponse(
+      null,
+      err.message?.includes('Failed to fetch')
+        ? 'Cannot connect to CitizenQueue API server. Please check your connection or ensure backend is running.'
+        : err.message || 'Network connectivity error',
+      500
+    );
+  }
 }
 
 export const apiClient = {
@@ -91,3 +170,4 @@ export const apiClient = {
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' })
 };
 
+export default apiClient;

@@ -24,8 +24,13 @@ import StageNavigation from '../../components/common/StageNavigation';
 export default function AdmissionProgressPage() {
   const [metrics, setMetrics] = useState(null);
 
-  const loadProgress = () => {
-    setMetrics(AdmissionService.getReadinessMetrics());
+  const loadProgress = async () => {
+    try {
+      const res = await AdmissionService.getReadinessMetrics();
+      if (res) setMetrics(res);
+    } catch (err) {
+      console.error('Failed to load admission progress:', err);
+    }
   };
 
   useEffect(() => {

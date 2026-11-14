@@ -1,11 +1,12 @@
 /**
  * CitizenQueue - Appointment Service Layer
  * 
- * Manages appointment creation, capacity verification, lifecycle state transitions,
- * and visitor verification checklists.
+ * Coordinates capacity scheduling, atomic slot reservation, booking retrieval,
+ * desk arrival status updates, and physical reporting checklist verification
+ * using the real backend API.
  */
 
-import { Storage } from './storageService';
+import { apiClient } from './api/apiClient';
 
 export const APPOINTMENT_STATUSES = {
   BOOKED: 'booked',
@@ -16,221 +17,160 @@ export const APPOINTMENT_STATUSES = {
   NO_SHOW: 'no_show'
 };
 
+let cachedAppointments = [];
+
 export const AppointmentService = {
   /**
-   * Retrieve all appointments
+   * Retrieve all appointments for the active user or institution
    */
-  getAll: () => {
-    return Storage.getAppointments();
+  getAll: async (params = {}) => {
+    // Try admin endpoint first if staff, otherwise fallback to my appointments
+    const query = new URLSearchParams(params).toString();
+    const adminRes = await apiClient.get(query ? `/admin/appointments?${query}` : '/admin/appointments');
+    if (adminRes.success && Array.isArray(adminRes.data)) {
+      cachedAppointments = adminRes.data;
+      return cachedAppointments;
+    }
+
+    const myRes = await apiClient.get('/appointments/my');
+    if (myRes.success && Array.isArray(myRes.data)) {
+      cachedAppointments = myRes.data;
+      return cachedAppointments;
+    }
+
+    return cachedAppointments;
   },
 
   /**
-   * Find an appointment by its ID or Reference Number
+   * Find an appointment by ID or reference number
    */
-  getById: (idOrRef) => {
-    const list = Storage.getAppointments();
-    return (
-      list.find(
-        (apt) => apt.id === idOrRef || apt.referenceNumber?.toLowerCase() === idOrRef?.toLowerCase()
-      ) || null
-    );
+  getById: async (idOrRef) => {
+    const res = await apiClient.get(`/appointments/${idOrRef}`);
+    if (res.success && res.data) {
+      return res.data;
+    }
+    return cachedAppointments.find((a) => a._id === idOrRef || a.referenceNumber === idOrRef || a.id === idOrRef) || null;
   },
 
   /**
-   * Filter appointments by user/citizen (for demo, returns citizen's appointments)
+   * Filter appointments for active citizen
    */
-  getCitizenAppointments: () => {
-    const list = Storage.getAppointments();
-    // In our prototype, all stored appointments are citizen-visible demonstration bookings
-    return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  getCitizenAppointments: async () => {
+    const res = await apiClient.get('/appointments/my');
+    if (res.success && Array.isArray(res.data)) {
+      cachedAppointments = res.data.map((apt) => ({
+        ...apt,
+        id: apt._id || apt.id
+      }));
+      return cachedAppointments;
+    }
+    return cachedAppointments;
   },
 
   /**
-   * Create a new appointment with local slot capacity validation
+   * Query real-time available capacity slots from backend database
    */
-  createAppointment: ({
+  getAvailableSlots: async (schoolId = 'inst-1', serviceId = 'srv-101', date = null) => {
+    const params = new URLSearchParams({ schoolId, serviceId });
+    if (date) params.set('date', date);
+
+    const res = await apiClient.get(`/appointments/slots?${params.toString()}`);
+    if (res.success && Array.isArray(res.data)) {
+      return res.data.map((s) => ({
+        ...s,
+        id: s.slotId || s._id,
+        available: s.isAvailable,
+        remainingCapacity: s.remaining
+      }));
+    }
+    return [];
+  },
+
+  /**
+   * Concurrency-safe atomic appointment booking
+   */
+  createAppointment: async ({
     service,
     date,
     slot,
-    visitor
+    visitor,
+    purpose = 'CSSPS Admission Reporting & Desk Verification'
   }) => {
-    // 1. Basic validation
-    if (!service || !date || !slot || !visitor) {
-      return { success: false, error: 'Missing required appointment details.' };
-    }
+    const payload = {
+      slotId: slot.slotId || slot.id || slot._id,
+      serviceId: service.serviceId || service.id || 'srv-101',
+      appointmentDate: date,
+      timeSlot: slot.time,
+      purpose,
+      visitorDetails: {
+        parentName: visitor.parentName,
+        contactPhone: visitor.contactPhone,
+        contactEmail: visitor.contactEmail || '',
+        studentName: visitor.studentName || '',
+        studentIndex: visitor.studentIndex || '',
+        notes: visitor.notes || ''
+      }
+    };
 
-    if (!visitor.parentName?.trim() || !visitor.contactPhone?.trim()) {
-      return { success: false, error: 'Parent/Guardian name and contact phone are required.' };
-    }
-
-    // 2. Slot capacity verification
-    const allAvailability = Storage.getAvailability();
-    const serviceDates = allAvailability[service.id] || [];
-    const dateEntry = serviceDates.find((d) => d.date === date);
-    const targetSlot = dateEntry?.slots.find((s) => s.id === slot.id);
-
-    if (targetSlot && targetSlot.bookedCount >= targetSlot.capacity) {
-      return {
-        success: false,
-        error: `Selected slot at ${slot.time} has reached maximum demonstration capacity (${targetSlot.capacity}/${targetSlot.capacity}). Please choose another slot.`
+    const res = await apiClient.post('/appointments/book', payload);
+    if (res.success && res.data) {
+      const created = {
+        ...res.data,
+        id: res.data._id || res.data.id
       };
+      cachedAppointments.unshift(created);
+      return { success: true, appointment: created };
     }
 
-    // 3. Duplicate local booking prevention
-    const currentAppointments = Storage.getAppointments();
-    const isDuplicate = currentAppointments.some((apt) => {
-      const isSameService = apt.serviceId === service.id;
-      const isSameDate = apt.appointmentDate === date;
-      const isSameContact =
-        apt.visitor?.contactPhone?.trim().toLowerCase() === visitor.contactPhone?.trim().toLowerCase();
-      const isActive = apt.status === 'booked' || apt.status === 'checked_in';
-      return isSameService && isSameDate && isSameContact && isActive;
+    return { success: false, error: res.error || 'Failed to book reporting appointment.' };
+  },
+
+  /**
+   * Cancel an appointment and restore capacity
+   */
+  cancelAppointment: async (appointmentId, cancellationReason = 'Cancelled by applicant') => {
+    const res = await apiClient.post(`/appointments/${appointmentId}/cancel`, {
+      cancellationReason
     });
 
-    if (isDuplicate) {
-      return {
-        success: false,
-        error: 'An active appointment for this contact number already exists for this service on the selected date.'
-      };
+    if (res.success && res.data) {
+      cachedAppointments = cachedAppointments.map((a) =>
+        (a._id === appointmentId || a.id === appointmentId) ? { ...a, status: 'cancelled' } : a
+      );
+      return { success: true, appointment: res.data };
     }
-
-    // 4. Generate Reference & ID
-    const randomDigits = Math.floor(100000 + Math.random() * 900000);
-    const referenceNumber = `CQ-2026-${randomDigits}`;
-    const newId = `apt-cq-${randomDigits}`;
-
-    // 5. Construct Checklist from service requirements
-    const checklist = (service.requirements || []).map((reqText, index) => ({
-      id: `c-${index + 1}`,
-      label: reqText,
-      verified: false
-    }));
-
-    // 6. Build Appointment object
-    const newAppointment = {
-      id: newId,
-      referenceNumber,
-      serviceId: service.id,
-      serviceName: service.name,
-      institutionId: service.institutionId,
-      institutionName: service.institutionName,
-      location: service.location || 'Administration Desk',
-      appointmentDate: date,
-      appointmentTime: slot.time,
-      slotId: slot.id,
-      status: APPOINTMENT_STATUSES.BOOKED,
-      delayNotice: service.delayNotice || null,
-      visitor: {
-        parentName: visitor.parentName.trim(),
-        contactPhone: visitor.contactPhone.trim(),
-        contactEmail: visitor.contactEmail?.trim() || '',
-        studentName: visitor.studentName?.trim() || '',
-        studentIndex: visitor.studentIndex?.trim() || '',
-        notes: visitor.notes?.trim() || ''
-      },
-      checklist,
-      createdAt: new Date().toISOString(),
-      history: [
-        {
-          timestamp: new Date().toISOString(),
-          action: 'Appointment booked online via CitizenQueue prototype'
-        }
-      ]
-    };
-
-    // 7. Update slot capacity count
-    if (targetSlot) {
-      targetSlot.bookedCount = (targetSlot.bookedCount || 0) + 1;
-      Storage.setAvailability(allAvailability);
-    }
-
-    // 8. Save appointment
-    const updatedAppointments = [newAppointment, ...currentAppointments];
-    Storage.setAppointments(updatedAppointments);
-
-    // 9. Create notification for citizen
-    const notifications = Storage.getNotifications();
-    const newNotification = {
-      id: `notif-${Date.now()}`,
-      title: `Booking Confirmed: ${referenceNumber}`,
-      message: `Your appointment at ${service.institutionName} for ${date} at ${slot.time} is confirmed in DEMO MODE.`,
-      date: new Date().toISOString(),
-      isRead: false,
-      type: 'confirmation'
-    };
-    Storage.setNotifications([newNotification, ...notifications]);
-
-    return {
-      success: true,
-      appointment: newAppointment
-    };
+    return { success: false, error: res.error || 'Failed to cancel appointment.' };
   },
 
   /**
-   * Update appointment status (booked, checked_in, in_progress, completed, cancelled, no_show)
+   * Update appointment desk arrival status
    */
-  updateStatus: (appointmentId, newStatus, note = '') => {
-    const list = Storage.getAppointments();
-    const aptIndex = list.findIndex((a) => a.id === appointmentId);
-    if (aptIndex === -1) {
-      return { success: false, error: 'Appointment not found.' };
+  updateStatus: async (appointmentId, newStatus, note = '') => {
+    const res = await apiClient.patch(`/appointments/${appointmentId}/desk-status`, {
+      deskStatus: newStatus,
+      officerNotes: note
+    });
+
+    if (res.success && res.data) {
+      return { success: true, appointment: res.data };
     }
-
-    const apt = list[aptIndex];
-    const oldStatus = apt.status;
-    apt.status = newStatus;
-
-    // Record in history log
-    const historyEntry = {
-      timestamp: new Date().toISOString(),
-      action: note
-        ? `Status updated to ${newStatus}: ${note}`
-        : `Status changed from ${oldStatus} to ${newStatus}`
-    };
-    apt.history = [...(apt.history || []), historyEntry];
-
-    // If cancelled, release slot capacity
-    if (newStatus === APPOINTMENT_STATUSES.CANCELLED && oldStatus !== APPOINTMENT_STATUSES.CANCELLED) {
-      const allAvailability = Storage.getAvailability();
-      const serviceDates = allAvailability[apt.serviceId] || [];
-      const dateEntry = serviceDates.find((d) => d.date === apt.appointmentDate);
-      const slot = dateEntry?.slots.find((s) => s.id === apt.slotId);
-      if (slot && slot.bookedCount > 0) {
-        slot.bookedCount -= 1;
-        Storage.setAvailability(allAvailability);
-      }
-    }
-
-    list[aptIndex] = apt;
-    Storage.setAppointments(list);
-
-    return { success: true, appointment: apt };
+    return { success: false, error: res.error || 'Failed to update desk status.' };
   },
 
   /**
-   * Cancel an appointment (Citizen action)
+   * Toggle physical arrival checklist items verified at the desk
    */
-  cancelAppointment: (appointmentId, reason = 'Cancelled by visitor') => {
-    return AppointmentService.updateStatus(
-      appointmentId,
-      APPOINTMENT_STATUSES.CANCELLED,
-      reason
-    );
-  },
+  toggleChecklistItem: async (appointmentId, checklistId, verified = true) => {
+    const res = await apiClient.patch(`/appointments/${appointmentId}/checklist`, {
+      itemKey: checklistId,
+      verified
+    });
 
-  /**
-   * Toggle document verification item on the checklist
-   */
-  toggleChecklistItem: (appointmentId, checklistItemId) => {
-    const list = Storage.getAppointments();
-    const apt = list.find((a) => a.id === appointmentId);
-    if (!apt) return null;
-
-    const item = (apt.checklist || []).find((c) => c.id === checklistItemId);
-    if (item) {
-      item.verified = !item.verified;
-      Storage.setAppointments(list);
+    if (res.success && res.data) {
+      return res.data;
     }
-    return apt;
+    return null;
   }
 };
+
+export default AppointmentService;

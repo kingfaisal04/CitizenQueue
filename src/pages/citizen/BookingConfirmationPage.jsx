@@ -33,8 +33,13 @@ export default function BookingConfirmationPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const apt = AppointmentService.getById(appointmentId);
-    setAppointment(apt);
+    let isMounted = true;
+    AppointmentService.getById(appointmentId).then((apt) => {
+      if (isMounted) setAppointment(apt);
+    }).catch((err) => {
+      console.error('Failed to load appointment confirmation:', err);
+    });
+    return () => { isMounted = false; };
   }, [appointmentId]);
 
   const handleCopyRef = () => {

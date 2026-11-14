@@ -46,12 +46,11 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { AdmissionService } from '../../services/admissionService';
-import { Storage } from '../../services/storageService';
 
 export default function AdminDocumentReviewPage() {
-  const [documents, setDocuments] = useState(() => AdmissionService.getDocuments());
-  const [admittedStudents, setAdmittedStudents] = useState(() => Storage.getAdmittedStudents() || []);
-  const [activeStudent, setActiveStudent] = useState(() => AdmissionService.getProfile());
+  const [documents, setDocuments] = useState([]);
+  const [admittedStudents, setAdmittedStudents] = useState([]);
+  const [activeStudent, setActiveStudent] = useState(() => AdmissionService.getCachedProfile());
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'pending' | 'accepted' | 'changes'
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,11 +94,24 @@ export default function AdminDocumentReviewPage() {
   // Toast Notification State
   const [toastMessage, setToastMessage] = useState('');
 
-  const reloadData = () => {
-    setDocuments(AdmissionService.getDocuments());
-    setAdmittedStudents(Storage.getAdmittedStudents() || []);
-    setActiveStudent(AdmissionService.getProfile());
+  const reloadData = async () => {
+    try {
+      const [docs, studs, prof] = await Promise.all([
+        AdmissionService.getDocuments(),
+        AdmissionService.getAdmittedStudents(),
+        AdmissionService.getProfile()
+      ]);
+      if (Array.isArray(docs)) setDocuments(docs);
+      if (Array.isArray(studs)) setAdmittedStudents(studs);
+      if (prof) setActiveStudent(prof);
+    } catch (err) {
+      console.error('Failed to reload document data:', err);
+    }
   };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -212,23 +224,23 @@ export default function AdminDocumentReviewPage() {
     );
   };
 
-  const handleQuickSingleApprove = (doc) => {
-    AdmissionService.adminReviewDocument(doc.id, {
+  const handleQuickSingleApprove = async (doc) => {
+    await AdmissionService.adminReviewDocument(doc.id, {
       status: 'provisionally_accepted',
       adminFeedback: 'Verified and provisionally approved by admissions desk checker.'
     });
-    reloadData();
+    await reloadData();
     showToast(`"${doc.name}" provisionally approved.`);
   };
 
-  const handleSubmitReviewDecision = (e) => {
+  const handleSubmitReviewDecision = async (e) => {
     e.preventDefault();
     if (reviewModal.isBatch) {
-      AdmissionService.adminBatchReviewDocuments(selectedDocIds, {
+      await AdmissionService.adminBatchReviewDocuments(selectedDocIds, {
         status: reviewAction,
         adminFeedback: feedbackNote.trim()
       });
-      reloadData();
+      await reloadData();
       showToast(
         reviewAction === 'provisionally_accepted'
           ? `Batch approved ${selectedDocIds.length} selected documents.`
@@ -236,11 +248,11 @@ export default function AdminDocumentReviewPage() {
       );
       setSelectedDocIds([]);
     } else if (reviewModal.doc) {
-      AdmissionService.adminReviewDocument(reviewModal.doc.id, {
+      await AdmissionService.adminReviewDocument(reviewModal.doc.id, {
         status: reviewAction,
         adminFeedback: feedbackNote.trim()
       });
-      reloadData();
+      await reloadData();
       showToast(
         reviewAction === 'provisionally_accepted'
           ? `"${reviewModal.doc.name}" has been provisionally approved.`

@@ -1,154 +1,159 @@
 /**
  * CitizenQueue - Authentication Service Layer
  * 
- * Manages user credentials, session persistence, role validation, and token storage.
- * Designed to cleanly switch between client-side simulation and production REST auth endpoints.
+ * Manages user credentials, session persistence, role validation,
+ * and communicates directly with the live REST API auth endpoints.
  */
 
-import { apiClient } from './api/apiClient';
-import { AdmissionService } from './admissionService';
+import { apiClient, setClientToken, getClientToken } from './api/apiClient';
 import { ROLES } from '../utils/constants';
-
-const TOKEN_KEY = 'cq_auth_token';
-const USER_KEY = 'cq_demo_user';
 
 export const authService = {
   /**
    * Retrieve active session token
    */
   getToken: () => {
-    try {
-      return localStorage.getItem(TOKEN_KEY);
-    } catch {
-      return null;
-    }
+    return getClientToken();
   },
 
   /**
    * Set active session token
    */
   setToken: (token) => {
-    try {
-      if (token) {
-        localStorage.setItem(TOKEN_KEY, token);
-      } else {
-        localStorage.removeItem(TOKEN_KEY);
-      }
-    } catch (e) {
-      console.warn('Storage error saving token', e);
-    }
+    setClientToken(token);
   },
 
   /**
-   * Retrieve current user from storage
+   * Retrieve current user profile from active session or local cache
    */
   getCurrentUser: () => {
     try {
-      const stored = localStorage.getItem(USER_KEY);
+      const stored = sessionStorage.getItem('cq_user');
       if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.warn('Storage error reading user', e);
+    } catch {
+      // Fallback
     }
-    return {
-      role: ROLES.STUDENT,
-      name: 'Emmanuel Mensah',
-      guardianName: 'Kwame Mensah',
-      email: 'kwame.mensah@example.com',
-      phone: '+233 24 411 2233',
-      school: 'Achimota Senior High School',
-      indexNumber: '101245089',
-      programme: 'General Science',
-      residentialStatus: 'Boarding'
-    };
+    return null;
   },
 
   /**
-   * Log in user with credentials (supports role-based demo personas)
+   * Store current user in local session
    */
-  login: async ({ identifier, password, role = ROLES.STUDENT }) => {
-    return apiClient.post('/auth/login', { identifier, password, role }, {
-      requiresAuth: false,
-      localFallbackHandler: () => {
-        let user;
-        if (role === ROLES.ADMIN) {
-          user = {
-            role: ROLES.ADMIN,
-            name: 'Admissions Officer Addo',
-            email: identifier || 'admissions-desk@achimota.edu.gh',
-            institutionId: 'inst-1',
-            institutionName: 'Achimota Senior High School'
-          };
-        } else {
-          const profile = AdmissionService.getProfile();
-          user = {
-            role: ROLES.STUDENT,
-            name: profile.fullName || 'Emmanuel Mensah',
-            guardianName: profile.guardianName || 'Kwame Mensah',
-            email: profile.guardianEmail || 'kwame.mensah@example.com',
-            phone: profile.guardianPhone || '+233 24 411 2233',
-            school: profile.assignedSchool || 'Achimota Senior High School',
-            indexNumber: identifier || profile.beceIndexNumber || '101245089',
-            programme: profile.programme || 'General Science',
-            residentialStatus: profile.residentialStatus || 'Boarding'
-          };
-        }
-
-        const mockToken = `demo_jwt_token_${Date.now()}`;
-        authService.setToken(mockToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return { user, token: mockToken };
+  setCurrentUser: (user) => {
+    try {
+      if (user) {
+        sessionStorage.setItem('cq_user', JSON.stringify(user));
+      } else {
+        sessionStorage.removeItem('cq_user');
       }
-    });
+    } catch {
+      // Ignore
+    }
   },
 
   /**
-   * Register a new candidate profile
+   * Log in user with credentials (supports student index number, email, or phone)
+   */
+  login: async ({ identifier, password }) => {
+    const res = await apiClient.post(
+      '/auth/login',
+      { identifier, password },
+      { requiresAuth: false }
+    );
+
+    if (res.success && res.data) {
+      const { user, accessToken, student, admission } = res.data;
+      if (accessToken) {
+        setClientToken(accessToken);
+      }
+      authService.setCurrentUser(user);
+      return { success: true, user, token: accessToken, student, admission };
+    }
+
+    return res;
+  },
+
+  /**
+   * Register a new student candidate profile
    */
   register: async (candidateData) => {
-    return apiClient.post('/auth/register', candidateData, {
-      requiresAuth: false,
-      localFallbackHandler: () => {
-        // Register through AdmissionService store
-        const registeredProfile = AdmissionService.registerStudent(candidateData);
+    const payload = {
+      fullName: candidateData.fullName,
+      email: candidateData.email || candidateData.guardianEmail,
+      password: candidateData.password || candidateData.pin || 'Password123!',
+      phoneNumber: candidateData.phoneNumber || candidateData.phone || candidateData.guardianPhone,
+      indexNumber: candidateData.beceIndexNumber || candidateData.indexNumber,
+      schoolId: candidateData.schoolId || candidateData.assignedSchoolId || 'inst-1',
+      programme: candidateData.programme || 'General Science',
+      residentialStatus: candidateData.residentialStatus || 'Boarding'
+    };
 
-        const user = {
-          role: ROLES.STUDENT,
-          name: registeredProfile.fullName,
-          guardianName: registeredProfile.guardianName,
-          email: registeredProfile.guardianEmail,
-          phone: registeredProfile.guardianPhone,
-          school: registeredProfile.assignedSchool,
-          indexNumber: registeredProfile.beceIndexNumber,
-          programme: registeredProfile.programme,
-          residentialStatus: registeredProfile.residentialStatus
-        };
+    const res = await apiClient.post('/auth/register', payload, { requiresAuth: false });
 
-        const mockToken = `demo_jwt_token_${Date.now()}`;
-        authService.setToken(mockToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-
-        return { user, token: mockToken, profile: registeredProfile };
+    if (res.success && res.data) {
+      const { user, accessToken, student, admission } = res.data;
+      if (accessToken) {
+        setClientToken(accessToken);
       }
-    });
+      authService.setCurrentUser(user);
+      return { success: true, user, token: accessToken, student, admission };
+    }
+
+    return res;
   },
 
   /**
-   * Terminate current session
+   * Register a new institutional administrator or staff officer
+   */
+  registerAdmin: async (staffData) => {
+    const payload = {
+      fullName: staffData.fullName || staffData.name,
+      email: staffData.email,
+      password: staffData.password || 'Password123!',
+      phoneNumber: staffData.phone || staffData.phoneNumber,
+      schoolId: staffData.schoolId || staffData.institutionId || 'inst-1',
+      role: staffData.role || 'school_admin',
+      staffId: staffData.staffId
+    };
+
+    const res = await apiClient.post('/auth/register-admin', payload, { requiresAuth: false });
+
+    if (res.success && res.data) {
+      const { user, accessToken } = res.data;
+      if (accessToken) {
+        setClientToken(accessToken);
+      }
+      authService.setCurrentUser(user);
+      return { success: true, user, token: accessToken };
+    }
+
+    return res;
+  },
+
+  /**
+   * Fetch active authenticated user context and student/admission data
+   */
+  getMe: async () => {
+    const res = await apiClient.get('/auth/me');
+    if (res.success && res.data) {
+      authService.setCurrentUser(res.data.user);
+    }
+    return res;
+  },
+
+  /**
+   * Terminate active session
    */
   logout: async () => {
-    return apiClient.post('/auth/logout', {}, {
-      requiresAuth: true,
-      localFallbackHandler: () => {
-        authService.setToken(null);
-        const guestUser = {
-          role: ROLES.GUEST,
-          name: 'Guest Visitor',
-          email: '',
-          phone: ''
-        };
-        localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
-        return { message: 'Logged out successfully' };
-      }
-    });
+    try {
+      await apiClient.post('/auth/logout', {});
+    } catch {
+      // Clear client state even if network fails
+    }
+    setClientToken(null);
+    authService.setCurrentUser(null);
+    return { success: true, message: 'Logged out successfully' };
   }
 };
+
+export default authService;

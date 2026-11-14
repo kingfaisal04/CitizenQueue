@@ -40,8 +40,15 @@ export default function AdminAppointmentsPage() {
   const [selectedApt, setSelectedApt] = useState(null);
   const [updateFeedback, setUpdateFeedback] = useState('');
 
-  const loadAppointments = () => {
-    setAppointments(AppointmentService.getAll());
+  const loadAppointments = async () => {
+    try {
+      const apts = await AppointmentService.getAll();
+      if (Array.isArray(apts)) {
+        setAppointments(apts);
+      }
+    } catch (err) {
+      console.error('Failed to load appointments:', err);
+    }
   };
 
   useEffect(() => {
@@ -49,11 +56,11 @@ export default function AdminAppointmentsPage() {
   }, []);
 
   // Update appointment status
-  const handleStatusChange = (aptId, newStatus, note = '') => {
-    const res = AppointmentService.updateStatus(aptId, newStatus, note);
+  const handleStatusChange = async (aptId, newStatus, note = '') => {
+    const res = await AppointmentService.updateStatus(aptId, newStatus, note);
     if (res.success) {
-      loadAppointments();
-      if (selectedApt && selectedApt.id === aptId) {
+      await loadAppointments();
+      if (selectedApt && (selectedApt.id === aptId || selectedApt._id === aptId)) {
         setSelectedApt(res.appointment);
       }
       setUpdateFeedback(`Status updated to ${newStatus}`);
@@ -62,10 +69,11 @@ export default function AdminAppointmentsPage() {
   };
 
   // Toggle staff checklist verification
-  const handleToggleChecklist = (aptId, checklistId) => {
-    const updated = AppointmentService.toggleChecklistItem(aptId, checklistId);
+  const handleToggleChecklist = async (aptId, checklistId) => {
+    const currentStatus = selectedApt?.reportingChecklist?.[checklistId]?.verified;
+    const updated = await AppointmentService.toggleChecklistItem(aptId, checklistId, !currentStatus);
     if (updated) {
-      loadAppointments();
+      await loadAppointments();
       setSelectedApt({ ...updated });
     }
   };

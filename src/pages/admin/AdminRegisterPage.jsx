@@ -82,6 +82,7 @@ export default function AdminRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -110,7 +111,7 @@ export default function AdminRegisterPage() {
     setFormError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -151,16 +152,34 @@ export default function AdminRegisterPage() {
     }
 
     try {
-      // Register staff profile & log in
-      registerStaff(formData);
-      setFormSuccess(true);
+      setIsSubmitting(true);
+      const res = await registerStaff({
+        fullName: formData.fullName.trim(),
+        name: formData.fullName.trim(),
+        staffId: formData.staffId.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        schoolName: formData.schoolName,
+        institutionId: 'inst-1',
+        schoolId: 'inst-1',
+        designation: formData.designation,
+        department: formData.department,
+        password: formData.password || 'Password123!'
+      });
 
-      setTimeout(() => {
-        navigate('/admin');
-      }, 700);
+      if (res.success) {
+        setFormSuccess(true);
+        setTimeout(() => {
+          navigate('/admin');
+        }, 700);
+      } else {
+        setFormError(res.error || 'Failed to create staff account. Please verify details.');
+      }
     } catch (err) {
       console.error('[CitizenQueue] Staff registration error:', err);
-      setFormError('An error occurred creating staff profile. Please try again.');
+      setFormError(err.message || 'An error occurred creating staff profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

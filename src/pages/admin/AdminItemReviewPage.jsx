@@ -29,9 +29,17 @@ export default function AdminItemReviewPage() {
   const [reviewStatus, setReviewStatus] = useState('provisionally_accepted');
   const [toastMessage, setToastMessage] = useState('');
 
-  const loadData = () => {
-    setProspectus(AdmissionService.getProspectus());
-    setItemStatuses(AdmissionService.getStudentProspectusStatus());
+  const loadData = async () => {
+    try {
+      const [pros, stat] = await Promise.all([
+        AdmissionService.getProspectus(),
+        AdmissionService.getStudentProspectusStatus()
+      ]);
+      if (Array.isArray(pros)) setProspectus(pros);
+      if (stat) setItemStatuses(stat);
+    } catch (err) {
+      console.error('Failed to load item review data:', err);
+    }
   };
 
   useEffect(() => {
@@ -73,16 +81,16 @@ export default function AdminItemReviewPage() {
     );
   };
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!selectedItem) return;
 
-    AdmissionService.adminReviewItemPhoto(selectedItem.id, {
+    await AdmissionService.adminReviewItemPhoto(selectedItem.id, {
       status: reviewStatus,
       adminFeedback: feedbackNote.trim()
     });
 
-    loadData();
+    await loadData();
     setSelectedItem(null);
     showToast(
       reviewStatus === 'provisionally_accepted'

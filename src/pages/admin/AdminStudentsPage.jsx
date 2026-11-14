@@ -28,8 +28,15 @@ export default function AdminStudentsPage() {
   // Selected student for detail modal
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const loadStudents = () => {
-    setStudents(AdmissionService.getAdmittedStudents());
+  const loadStudents = async () => {
+    try {
+      const cohort = await AdmissionService.getAdmittedStudents();
+      if (Array.isArray(cohort)) {
+        setStudents(cohort);
+      }
+    } catch (err) {
+      console.error('Failed to load students:', err);
+    }
   };
 
   useEffect(() => {

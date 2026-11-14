@@ -46,8 +46,15 @@ export default function AdminServicesPage() {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  const loadServices = () => {
-    setServices(ServiceService.getAll());
+  const loadServices = async () => {
+    try {
+      const srvs = await ServiceService.getAll();
+      if (Array.isArray(srvs)) {
+        setServices(srvs);
+      }
+    } catch (err) {
+      console.error('Failed to load services:', err);
+    }
   };
 
   useEffect(() => {

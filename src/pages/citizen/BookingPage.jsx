@@ -67,38 +67,44 @@ export default function BookingPage() {
 
   // Load service & availability when selectedServiceId changes
   useEffect(() => {
-    setIsLoading(true);
-    const targetId = selectedServiceId || 'srv-101';
-    let srv = ServiceService.getById(targetId);
-    if (!srv) {
-      srv = ServiceService.getById('srv-101');
-    }
+    let isMounted = true;
+    async function loadBookingData() {
+      setIsLoading(true);
+      const targetId = selectedServiceId || 'srv-101';
+      await ServiceService.getAll();
+      const srv = ServiceService.getById(targetId) || ServiceService.getById('srv-101');
 
-    if (srv) {
-      setService(srv);
-      const av = ServiceService.getAvailability(srv.id);
-      setAvailability(av);
-      if (av && av.length > 0) {
-        setSelectedDate(av[0].date);
-        setSelectedSlot(null);
+      if (srv && isMounted) {
+        setService(srv);
+        const av = await ServiceService.getAvailability(srv.id || srv.serviceId);
+        if (isMounted) {
+          setAvailability(av);
+          if (av && av.length > 0) {
+            setSelectedDate(av[0].date);
+            setSelectedSlot(null);
+          }
+        }
       }
+
+      // Prepopulate with student admission profile
+      const profile = await AdmissionService.getProfile();
+      if (profile && isMounted) {
+        setVisitorInfo((prev) => ({
+          ...prev,
+          studentName: profile.fullName || prev.studentName || 'Emmanuel Mensah',
+          studentIndex: profile.beceIndexNumber || prev.studentIndex || '101245089',
+          parentName: profile.guardianName || prev.parentName || 'Kwame Mensah',
+          contactPhone: profile.guardianPhone || prev.contactPhone || '+233 24 411 2233',
+          contactEmail: profile.guardianEmail || prev.contactEmail || '',
+          notes: prev.notes || `${profile.programme || 'General Science'} - ${profile.residentialStatus || 'Boarding'}`
+        }));
+      }
+
+      if (isMounted) setIsLoading(false);
     }
 
-    // Prepopulate with student admission profile
-    const profile = AdmissionService.getProfile();
-    if (profile) {
-      setVisitorInfo((prev) => ({
-        ...prev,
-        studentName: profile.fullName || 'Emmanuel Mensah',
-        studentIndex: profile.beceIndexNumber || '101245089',
-        parentName: profile.guardianName || prev.parentName || 'Kwame Mensah',
-        contactPhone: profile.guardianPhone || prev.contactPhone || '+233 24 411 2233',
-        contactEmail: profile.guardianEmail || prev.contactEmail || '',
-        notes: prev.notes || `${profile.programme || 'General Science'} - ${profile.residentialStatus || 'Boarding'}`
-      }));
-    }
-
-    setIsLoading(false);
+    loadBookingData();
+    return () => { isMounted = false; };
   }, [selectedServiceId]);
 
   // Handle service switch
@@ -163,23 +169,28 @@ export default function BookingPage() {
   };
 
   // Confirm and create appointment
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     setIsSubmitting(true);
     setSubmitError('');
 
-    const result = AppointmentService.createAppointment({
-      service,
-      date: selectedDate,
-      slot: selectedSlot,
-      visitor: visitorInfo
-    });
+    try {
+      const result = await AppointmentService.createAppointment({
+        service,
+        date: selectedDate,
+        slot: selectedSlot,
+        visitor: visitorInfo
+      });
 
-    if (result.success) {
-      AdmissionService.syncStudentCohort();
-      navigate(`/booking-confirmation/${result.appointment.id}`);
-    } else {
+      if (result.success && result.appointment) {
+        const appointmentId = result.appointment._id || result.appointment.id || result.appointment.referenceNumber;
+        navigate(`/booking-confirmation/${appointmentId}`);
+      } else {
+        setIsSubmitting(false);
+        setSubmitError(result.error || 'Failed to complete appointment booking.');
+      }
+    } catch (err) {
       setIsSubmitting(false);
-      setSubmitError(result.error || 'Failed to complete appointment booking.');
+      setSubmitError(err.message || 'An unexpected booking error occurred.');
     }
   };
 

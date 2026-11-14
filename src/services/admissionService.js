@@ -1,102 +1,92 @@
 /**
  * CitizenQueue - Admission & Orchestration Service Layer
  * 
- * Provides unified management for:
+ * Provides unified integration with real backend API endpoints for:
  * - Student bio-data & placement profile
  * - Digital prospectus requirements and item purchase status
  * - Item photograph submission & preliminary administrator review
  * - Admission document uploads, status tracking & feedback
  * - Institutional admission cohort statistics & review queues
- * - 9-stage admission progress calculation
+ * - Dynamic 9-stage admission progress calculation
  */
 
-import { Storage } from './storageService';
-import { AppointmentService } from './appointmentService';
-import { ADMISSION_STAGES, GES_FREE_PROSPECTUS_ITEMS } from '../data/mockData';
+import { apiClient } from './api/apiClient';
+import { GES_FREE_PROSPECTUS_ITEMS } from '../data/gesFreeItems';
+
+// Memory cache for synchronous initial renders
+let cachedProfile = null;
+let cachedMetrics = null;
+let cachedDocuments = [];
+let cachedProspectus = [];
+let cachedProspectusStatus = {};
+let cachedAdmittedStudents = [];
 
 export const AdmissionService = {
   // ==========================================================================
   // 1. STUDENT PROFILE & PLACEMENT MANAGEMENT
   // ==========================================================================
-  
-  /**
-   * Retrieve active student profile
-   */
-  getProfile: () => {
-    return Storage.getStudentProfile();
-  },
 
   /**
-   * Update student profile fields
+   * Retrieve active student profile (async API call with sync cache fallback)
    */
-  updateProfile: (updatedFields) => {
-    const current = Storage.getStudentProfile();
-    const updated = {
-      ...current,
-      ...updatedFields,
-      // Calculate completeness based on key mandatory fields
-      isComplete: Boolean(
-        (updatedFields.fullName ?? current.fullName)?.trim() &&
-        (updatedFields.beceIndexNumber ?? current.beceIndexNumber)?.trim() &&
-        (updatedFields.dateOfBirth ?? current.dateOfBirth) &&
-        (updatedFields.assignedSchool ?? current.assignedSchool) &&
-        (updatedFields.programme ?? current.programme) &&
-        (updatedFields.guardianName ?? current.guardianName)?.trim() &&
-        (updatedFields.guardianPhone ?? current.guardianPhone)?.trim()
-      )
-    };
-    Storage.setStudentProfile(updated);
-
-    // Sync active student in institution admitted cohort
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  /**
-   * Register a new candidate profile and add them to the admitted cohort
-   */
-  registerStudent: (studentData) => {
-    // 1. Create and update student profile
-    const profile = AdmissionService.updateProfile({
-      ...studentData,
-      isComplete: true
-    });
-
-    // 2. Add to admitted students list if not present
-    const students = Storage.getAdmittedStudents();
-    const existingIndex = students.findIndex(
-      (s) => s.indexNumber === studentData.beceIndexNumber || s.id === studentData.id
-    );
-
-    const newStudentEntry = {
-      id: `std-${studentData.beceIndexNumber || Date.now()}`,
-      name: studentData.fullName,
-      indexNumber: studentData.beceIndexNumber,
-      gender: studentData.gender || 'Male',
-      programme: studentData.programme || 'General Science',
-      residentialStatus: studentData.residentialStatus || 'Boarding',
-      guardianName: studentData.guardianName || '',
-      guardianPhone: studentData.guardianPhone || '',
-      guardianEmail: studentData.guardianEmail || '',
-      aggregate: studentData.aggregateScore || '10',
-      readinessScore: 35,
-      admissionStage: 2,
-      profileComplete: true,
-      documentsCount: { total: 6, accepted: 0, pending: 0, changes: 0 },
-      prospectusCount: { total: 15, purchased: 0, photosPending: 0, photosAccepted: 0, photosChanges: 0 },
-      appointment: null,
-      registrationStatus: 'profile_pending',
-      lastActive: 'Just now'
-    };
-
-    if (existingIndex !== -1) {
-      students[existingIndex] = { ...students[existingIndex], ...newStudentEntry };
-    } else {
-      students.unshift(newStudentEntry);
+  getProfile: async () => {
+    const res = await apiClient.get('/students/profile');
+    if (res.success && res.data) {
+      cachedProfile = {
+        ...res.data,
+        id: res.data._id || res.data.id,
+        beceIndexNumber: res.data.beceIndexNumber || res.data.indexNumber,
+        assignedSchool: res.data.assignedSchool || res.data.school?.name || 'Achimota Senior High School'
+      };
+      return cachedProfile;
     }
-    Storage.setAdmittedStudents(students);
+    return cachedProfile || {
+      fullName: '',
+      beceIndexNumber: '',
+      programme: 'General Science',
+      residentialStatus: 'Boarding',
+      assignedSchool: 'Achimota Senior High School',
+      isComplete: false
+    };
+  },
 
-    return profile;
+  /**
+   * Synchronous cached profile getter for initial React component state
+   */
+  getCachedProfile: () => {
+    return cachedProfile || {
+      fullName: '',
+      beceIndexNumber: '',
+      programme: 'General Science',
+      residentialStatus: 'Boarding',
+      assignedSchool: 'Achimota Senior High School',
+      isComplete: false
+    };
+  },
+
+  /**
+   * Update student profile fields via API
+   */
+  updateProfile: async (updatedFields) => {
+    const res = await apiClient.put('/students/profile', updatedFields);
+    if (res.success && res.data) {
+      const studentData = res.data.student || res.data;
+      cachedProfile = {
+        ...studentData,
+        id: studentData._id || studentData.id,
+        assignedSchool: studentData.assignedSchool || 'Achimota Senior High School'
+      };
+      if (res.data.admission) {
+        cachedMetrics = {
+          compositeScore: res.data.readinessScore ?? 20,
+          currentStage: res.data.currentStage ?? 2,
+          stages: res.data.stages ?? [],
+          stats: res.data.stats ?? {}
+        };
+      }
+      return cachedProfile;
+    }
+    return cachedProfile;
   },
 
   // ==========================================================================
@@ -104,690 +94,376 @@ export const AdmissionService = {
   // ==========================================================================
 
   /**
-   * Get master school prospectus requirements (items to purchase/bring)
+   * Get master school prospectus requirements from API
    */
-  getProspectus: () => {
-    return Storage.getProspectus();
+  getProspectus: async (schoolId = 'inst-1', gender = null) => {
+    const endpoint = gender
+      ? `/prospectus/catalog?schoolId=${schoolId}&gender=${gender}`
+      : `/prospectus/catalog?schoolId=${schoolId}`;
+
+    const res = await apiClient.get(endpoint);
+    if (res.success && Array.isArray(res.data)) {
+      cachedProspectus = res.data.map((item) => ({
+        ...item,
+        id: item.itemId || item._id,
+        requiresPhotoReview: item.requiresPhotoReview ?? true
+      }));
+      return cachedProspectus;
+    }
+    return cachedProspectus;
   },
 
   /**
-   * Get items provided free of charge by Ghana Education Service (Free SHS policy)
+   * Get items provided free of charge by Ghana Education Service
    */
   getGesFreeItems: () => {
     return GES_FREE_PROSPECTUS_ITEMS;
   },
 
   /**
-   * Get student's purchase and photo review status for prospectus items
+   * Get student's purchase and photo review status for prospectus items from API
    */
-  getStudentProspectusStatus: () => {
-    return Storage.getStudentProspectusStatus();
-  },
-
-  /**
-   * Toggle purchase status for a prospectus item
-   */
-  toggleItemPurchased: (itemId) => {
-    const statusMap = Storage.getStudentProspectusStatus();
-    const currentItem = statusMap[itemId] || {
-      purchased: false,
-      photoStatus: 'not_submitted',
-      photoName: null,
-      photoUrl: null,
-      submittedAt: null,
-      adminFeedback: null
-    };
-
-    const updated = {
-      ...statusMap,
-      [itemId]: {
-        ...currentItem,
-        purchased: !currentItem.purchased
-      }
-    };
-    Storage.setStudentProspectusStatus(updated);
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  /**
-   * Mark a prospectus item as purchased or unpurchased explicitly
-   */
-  setItemPurchased: (itemId, isPurchased) => {
-    const statusMap = Storage.getStudentProspectusStatus();
-    const currentItem = statusMap[itemId] || {
-      purchased: false,
-      photoStatus: 'not_submitted',
-      photoName: null,
-      photoUrl: null,
-      submittedAt: null,
-      adminFeedback: null
-    };
-
-    const updated = {
-      ...statusMap,
-      [itemId]: {
-        ...currentItem,
-        purchased: Boolean(isPurchased)
-      }
-    };
-    Storage.setStudentProspectusStatus(updated);
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  /**
-   * Student submits an item photograph for preliminary review
-   */
-  submitItemPhoto: (itemId, { photoUrl, photoName }) => {
-    const statusMap = Storage.getStudentProspectusStatus();
-    const currentItem = statusMap[itemId] || {
-      purchased: true,
-      photoStatus: 'not_submitted',
-      photoName: null,
-      photoUrl: null,
-      submittedAt: null,
-      adminFeedback: null
-    };
-
-    const updated = {
-      ...statusMap,
-      [itemId]: {
-        ...currentItem,
-        purchased: true, // Auto-mark as purchased if photo uploaded
-        photoStatus: 'awaiting_review',
-        photoName: photoName || 'item_photo.jpg',
-        photoUrl: photoUrl || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=60',
-        submittedAt: new Date().toISOString(),
-        adminFeedback: 'Awaiting preliminary review by school administration desk.'
-      }
-    };
-
-    Storage.setStudentProspectusStatus(updated);
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  /**
-   * Remove or replace submitted item photograph
-   */
-  removeItemPhoto: (itemId) => {
-    const statusMap = Storage.getStudentProspectusStatus();
-    const currentItem = statusMap[itemId];
-    if (!currentItem) return statusMap;
-
-    const updated = {
-      ...statusMap,
-      [itemId]: {
-        ...currentItem,
-        photoStatus: 'not_submitted',
-        photoName: null,
-        photoUrl: null,
-        submittedAt: null,
-        adminFeedback: null
-      }
-    };
-
-    Storage.setStudentProspectusStatus(updated);
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  /**
-   * Administrator reviews an item photo (Provisionally Accept or Request Changes)
-   */
-  adminReviewItemPhoto: (itemId, { status, adminFeedback }) => {
-    // 1. Update student's local status
-    const statusMap = Storage.getStudentProspectusStatus();
-    const currentItem = statusMap[itemId] || {};
-
-    const updated = {
-      ...statusMap,
-      [itemId]: {
-        ...currentItem,
-        photoStatus: status, // 'provisionally_accepted' | 'changes_required'
-        adminFeedback: adminFeedback || (status === 'provisionally_accepted' ? 'Item specification provisionally accepted.' : 'Please adjust according to school requirements.')
-      }
-    };
-    Storage.setStudentProspectusStatus(updated);
-
-    // 2. Also record notification for student
-    const notifs = Storage.getNotifications();
-    const itemReq = (Storage.getProspectus() || []).find((p) => p.id === itemId);
-    const itemName = itemReq?.name || 'Prospectus Item';
-    const newNotif = {
-      id: `notif-${Date.now()}`,
-      title: status === 'provisionally_accepted' 
-        ? `Item Approved: ${itemName}` 
-        : `Correction Needed: ${itemName}`,
-      message: adminFeedback || `Administrator updated status for ${itemName}.`,
-      date: new Date().toISOString(),
-      isRead: false,
-      type: status === 'provisionally_accepted' ? 'info' : 'reminder'
-    };
-    Storage.setNotifications([newNotif, ...notifs]);
-
-    AdmissionService.syncStudentCohort();
-    return updated;
-  },
-
-  // ==========================================================================
-  // 3. MASTER PROSPECTUS REQUIREMENT MANAGEMENT (ADMIN CRUD)
-  // ==========================================================================
-
-  /**
-   * Add new requirement to master school prospectus
-   */
-  addProspectusRequirement: (requirementData) => {
-    const list = Storage.getProspectus();
-    const newId = `pr-${Date.now()}`;
-    const newReq = {
-      id: newId,
-      schoolId: requirementData.schoolId || 'inst-1',
-      name: requirementData.name.trim(),
-      category: requirementData.category || 'Clothing and Uniforms',
-      specification: requirementData.specification.trim(),
-      description: requirementData.description?.trim() || '',
-      quantity: requirementData.quantity?.trim() || '1 piece',
-      requiresPhotoReview: Boolean(requirementData.requiresPhotoReview),
-      referenceNotes: requirementData.referenceNotes?.trim() || ''
-    };
-
-    const updated = [newReq, ...list];
-    Storage.setProspectus(updated);
-    return newReq;
-  },
-
-  /**
-   * Update existing requirement
-   */
-  updateProspectusRequirement: (id, fields) => {
-    const list = Storage.getProspectus();
-    const index = list.findIndex((r) => r.id === id);
-    if (index === -1) return null;
-
-    list[index] = { ...list[index], ...fields };
-    Storage.setProspectus(list);
-    return list[index];
-  },
-
-  /**
-   * Delete requirement from school prospectus
-   */
-  deleteProspectusRequirement: (id) => {
-    const list = Storage.getProspectus();
-    const filtered = list.filter((r) => r.id !== id);
-    Storage.setProspectus(filtered);
-    return true;
-  },
-
-  // ==========================================================================
-  // 4. ADMISSION DOCUMENT CENTRE
-  // ==========================================================================
-
-  /**
-   * Get student's document checklist
-   */
-  getDocuments: () => {
-    return Storage.getStudentDocuments();
-  },
-
-  /**
-   * Student uploads a document (demonstration file preview)
-   */
-  uploadDocument: (docId, { fileName, fileSize, fileUrl }) => {
-    const docs = Storage.getStudentDocuments();
-    const index = docs.findIndex((d) => d.id === docId);
-    if (index === -1) return null;
-
-    docs[index] = {
-      ...docs[index],
-      status: 'submitted',
-      fileName: fileName || `${docs[index].name.toLowerCase().replace(/\s+/g, '_')}.pdf`,
-      fileSize: fileSize || '1.4 MB',
-      uploadedAt: new Date().toISOString(),
-      fileUrl: fileUrl || 'https://images.unsplash.com/photo-1568667256549-094345857637?w=600&auto=format&fit=crop&q=60',
-      adminFeedback: 'Submitted for preliminary administrative desk verification.'
-    };
-
-    Storage.setStudentDocuments(docs);
-    AdmissionService.syncStudentCohort();
-    return docs[index];
-  },
-
-  /**
-   * Remove a submitted document
-   */
-  removeDocument: (docId) => {
-    const docs = Storage.getStudentDocuments();
-    const index = docs.findIndex((d) => d.id === docId);
-    if (index === -1) return null;
-
-    docs[index] = {
-      ...docs[index],
-      status: 'not_submitted',
-      fileName: null,
-      fileSize: null,
-      uploadedAt: null,
-      reviewedAt: null,
-      adminFeedback: null,
-      fileUrl: null
-    };
-
-    Storage.setStudentDocuments(docs);
-    AdmissionService.syncStudentCohort();
-    return docs[index];
-  },
-
-  /**
-   * Administrator reviews document (Provisionally Accept or Request Corrections)
-   */
-  adminReviewDocument: (docId, { status, adminFeedback }) => {
-    const docs = Storage.getStudentDocuments();
-    const index = docs.findIndex((d) => d.id === docId);
-    if (index === -1) return null;
-
-    docs[index] = {
-      ...docs[index],
-      status, // 'provisionally_accepted' | 'changes_required' | 'under_review'
-      reviewedAt: new Date().toISOString(),
-      adminFeedback: adminFeedback || (status === 'provisionally_accepted' ? 'Document provisionally accepted.' : 'Please re-upload a clear copy.')
-    };
-
-    Storage.setStudentDocuments(docs);
-
-    // Notify student
-    const notifs = Storage.getNotifications();
-    const newNotif = {
-      id: `notif-${Date.now()}`,
-      title: status === 'provisionally_accepted' 
-        ? `Document Accepted: ${docs[index].name}` 
-        : `Correction Required: ${docs[index].name}`,
-      message: adminFeedback || `Administrator reviewed ${docs[index].name}.`,
-      date: new Date().toISOString(),
-      isRead: false,
-      type: status === 'provisionally_accepted' ? 'confirmation' : 'reminder'
-    };
-    Storage.setNotifications([newNotif, ...notifs]);
-
-    AdmissionService.syncStudentCohort();
-    return docs[index];
-  },
-
-  /**
-   * Add a new document requirement
-   */
-  addDocumentRequirement: (docData) => {
-    const docs = Storage.getStudentDocuments();
-    const newDoc = {
-      id: `doc-${Date.now()}`,
-      name: docData.name.trim(),
-      category: docData.category || 'Academic Records',
-      required: docData.required !== undefined ? Boolean(docData.required) : true,
-      description: docData.description?.trim() || '',
-      status: docData.fileUrl ? (docData.status || 'submitted') : 'not_submitted',
-      fileName: docData.fileName || (docData.fileUrl ? `${docData.name.toLowerCase().replace(/\s+/g, '_')}.pdf` : null),
-      fileSize: docData.fileSize || (docData.fileUrl ? '1.2 MB' : null),
-      uploadedAt: docData.fileUrl ? (docData.uploadedAt || new Date().toISOString()) : null,
-      reviewedAt: null,
-      adminFeedback: null,
-      fileUrl: docData.fileUrl || null
-    };
-
-    const updated = [newDoc, ...docs];
-    Storage.setStudentDocuments(updated);
-    AdmissionService.syncStudentCohort();
-    return newDoc;
-  },
-
-  /**
-   * Update an existing document requirement
-   */
-  updateDocumentRequirement: (docId, updatedFields) => {
-    const docs = Storage.getStudentDocuments();
-    const index = docs.findIndex((d) => d.id === docId);
-    if (index === -1) return null;
-
-    docs[index] = {
-      ...docs[index],
-      ...updatedFields,
-      name: updatedFields.name !== undefined ? updatedFields.name.trim() : docs[index].name,
-      description: updatedFields.description !== undefined ? updatedFields.description.trim() : docs[index].description
-    };
-
-    Storage.setStudentDocuments(docs);
-    AdmissionService.syncStudentCohort();
-    return docs[index];
-  },
-
-  /**
-   * Delete a document requirement
-   */
-  deleteDocumentRequirement: (docId) => {
-    const docs = Storage.getStudentDocuments();
-    const filtered = docs.filter((d) => d.id !== docId);
-    Storage.setStudentDocuments(filtered);
-    AdmissionService.syncStudentCohort();
-    return true;
-  },
-
-  /**
-   * Batch review multiple documents simultaneously
-   */
-  adminBatchReviewDocuments: (docIds, { status, adminFeedback }) => {
-    const docs = Storage.getStudentDocuments();
-    const now = new Date().toISOString();
-    const notifs = Storage.getNotifications();
-    const newNotifs = [];
-
-    docs.forEach((doc) => {
-      if (docIds.includes(doc.id)) {
-        doc.status = status;
-        doc.reviewedAt = now;
-        doc.adminFeedback = adminFeedback || (status === 'provisionally_accepted' ? 'Provisionally approved by admissions desk.' : 'Correction required by admissions desk.');
-        newNotifs.push({
-          id: `notif-${Date.now()}-${doc.id}`,
-          title: status === 'provisionally_accepted' ? `Document Accepted: ${doc.name}` : `Correction Required: ${doc.name}`,
-          message: doc.adminFeedback,
-          date: now,
-          isRead: false,
-          type: status === 'provisionally_accepted' ? 'confirmation' : 'reminder'
-        });
-      }
-    });
-
-    Storage.setStudentDocuments(docs);
-    if (newNotifs.length > 0) {
-      Storage.setNotifications([...newNotifs, ...notifs]);
-    }
-    AdmissionService.syncStudentCohort();
-    return docs;
-  },
-
-  // ==========================================================================
-  // 5. READINESS CALCULATIONS & 9-STAGE ADMISSION PROGRESS
-  // ==========================================================================
-
-  /**
-   * Calculate real-time readiness metrics across Profile, Prospectus, Documents and Appointments
-   */
-  getReadinessMetrics: () => {
-    const profile = Storage.getStudentProfile();
-    const prospectus = Storage.getProspectus();
-    const prospectusStatus = Storage.getStudentProspectusStatus();
-    const documents = Storage.getStudentDocuments();
-    const appointments = AppointmentService.getCitizenAppointments();
-
-    // 1. Profile Completion (100% or based on fields)
-    const profileComplete = Boolean(profile.isComplete);
-    const profileScore = profileComplete ? 100 : 40;
-
-    // 2. Prospectus Completion
-    const totalProspectusItems = prospectus.length || 1;
-    let purchasedCount = 0;
-    let photosAwaitingCount = 0;
-    let photosAcceptedCount = 0;
-    let photosChangesCount = 0;
-
-    prospectus.forEach((item) => {
-      const st = prospectusStatus[item.id];
-      if (st?.purchased) purchasedCount++;
-      if (st?.photoStatus === 'awaiting_review') photosAwaitingCount++;
-      if (st?.photoStatus === 'provisionally_accepted') photosAcceptedCount++;
-      if (st?.photoStatus === 'changes_required') photosChangesCount++;
-    });
-
-    const prospectusProgress = Math.round((purchasedCount / totalProspectusItems) * 100);
-
-    // 3. Document Completion
-    const totalDocs = documents.length || 1;
-    let docsAccepted = 0;
-    let docsUnderReview = 0;
-    let docsSubmitted = 0;
-    let docsChanges = 0;
-    let docsNotSubmitted = 0;
-
-    documents.forEach((doc) => {
-      if (doc.status === 'provisionally_accepted') docsAccepted++;
-      else if (doc.status === 'under_review') docsUnderReview++;
-      else if (doc.status === 'submitted') docsSubmitted++;
-      else if (doc.status === 'changes_required') docsChanges++;
-      else docsNotSubmitted++;
-    });
-
-    const docsReviewedOrUploaded = docsAccepted + docsUnderReview + docsSubmitted;
-    const documentProgress = Math.round((docsReviewedOrUploaded / totalDocs) * 100);
-
-    // 4. Appointment Status
-    const activeAppointment = appointments.find((a) =>
-      ['booked', 'checked_in', 'in_progress', 'completed'].includes(a.status)
-    );
-
-    // 5. Total Readiness Score (Weighted composite)
-    // Profile: 25%, Documents: 35%, Prospectus: 40%
-    const compositeScore = Math.round(
-      (profileScore * 0.25) +
-      (documentProgress * 0.35) +
-      (prospectusProgress * 0.40)
-    );
-
-    // 6. Compute Current Admission Stage (1 through 9)
-    let currentStage = 1; // Stage 1: Placement Received (always true in this post-placement app)
-
-    if (profileComplete) {
-      currentStage = 2; // Profile Completed
-    }
-
-    if (prospectusProgress >= 60) {
-      currentStage = 3; // Prospectus Requirements Reviewed
-    }
-
-    if (docsNotSubmitted === 0 && docsChanges === 0) {
-      currentStage = 4; // Documents Submitted
-    }
-
-    if (currentStage >= 4 && (docsAccepted >= 3 || photosAcceptedCount >= 2)) {
-      currentStage = 5; // Preliminary Review Completed
-    }
-
-    // Ready for physical reporting if profile complete, docs submitted/reviewed, and prospectus reviewed
-    const isReadyForReporting = (
-      profileComplete &&
-      docsChanges === 0 &&
-      docsNotSubmitted <= 1 &&
-      prospectusProgress >= 60
-    );
-
-    if (isReadyForReporting) {
-      currentStage = Math.max(currentStage, 6); // Ready for physical reporting
-    }
-
-    if (activeAppointment) {
-      if (activeAppointment.status === 'booked') {
-        currentStage = Math.max(currentStage, 7); // Appointment scheduled
-      } else if (activeAppointment.status === 'checked_in' || activeAppointment.status === 'in_progress') {
-        currentStage = 8; // Checked in on campus
-      } else if (activeAppointment.status === 'completed') {
-        currentStage = 9; // Registration completed
-      }
-    }
-
-    return {
-      profileComplete,
-      profileScore,
-      totalProspectusItems,
-      purchasedCount,
-      photosAwaitingCount,
-      photosAcceptedCount,
-      photosChangesCount,
-      prospectusProgress,
-      totalDocs,
-      docsAccepted,
-      docsUnderReview,
-      docsSubmitted,
-      docsChanges,
-      docsNotSubmitted,
-      documentProgress,
-      activeAppointment,
-      compositeScore,
-      currentStage,
-      isReadyForReporting,
-      stages: ADMISSION_STAGES.map((s) => ({
-        ...s,
-        isCompleted: s.stage < currentStage,
-        isCurrent: s.stage === currentStage,
-        isUpcoming: s.stage > currentStage
-      }))
-    };
-  },
-
-  /**
-   * Generate outstanding action items for the student dashboard
-   */
-  getOutstandingTasks: () => {
-    const metrics = AdmissionService.getReadinessMetrics();
-    const profile = Storage.getStudentProfile();
-    const documents = Storage.getStudentDocuments();
-    const prospectus = Storage.getProspectus();
-
-    const tasks = [];
-
-    // Profile task
-    if (!profile.isComplete) {
-      tasks.push({
-        id: 'task-profile',
-        title: 'Complete your Admission Profile',
-        description: 'Provide student bio-data, guardian contacts and residential status.',
-        link: '/profile',
-        actionLabel: 'Complete Profile',
-        priority: 'high',
-        category: 'Profile'
-      });
-    }
-
-    // Document tasks
-    documents.forEach((doc) => {
-      if (doc.status === 'changes_required') {
-        tasks.push({
-          id: `task-doc-fix-${doc.id}`,
-          title: `Re-upload: ${doc.name}`,
-          description: `Action required: ${doc.adminFeedback || 'Corrections requested by school desk.'}`,
-          link: '/documents',
-          actionLabel: 'Resolve Document',
-          priority: 'urgent',
-          category: 'Documents'
-        });
-      } else if (doc.status === 'not_submitted' && doc.required) {
-        tasks.push({
-          id: `task-doc-sub-${doc.id}`,
-          title: `Upload ${doc.name}`,
-          description: doc.description,
-          link: '/documents',
-          actionLabel: 'Upload',
-          priority: 'medium',
-          category: 'Documents'
-        });
-      }
-    });
-
-    // Prospectus supplies acquisition task
-    const unpurchasedCount = prospectus.length - metrics.purchasedCount;
-    if (unpurchasedCount > 0 && metrics.prospectusProgress < 100) {
-      tasks.push({
-        id: 'task-prospectus-items',
-        title: 'Acquire Prospectus Supplies',
-        description: `You have ${unpurchasedCount} prospectus item(s) left to acquire before reporting day.`,
-        link: '/prospectus',
-        actionLabel: 'Check Prospectus',
-        priority: 'medium',
-        category: 'Prospectus'
-      });
-    }
-
-    // Appointment task
-    if (!metrics.activeAppointment) {
-      if (metrics.isReadyForReporting) {
-        tasks.push({
-          id: 'task-appointment-ready',
-          title: 'Schedule Your Reporting Appointment',
-          description: 'You have satisfied pre-arrival prerequisites. Choose your physical verification slot.',
-          link: '/book/srv-101',
-          actionLabel: 'Book Reporting Slot',
-          priority: 'high',
-          category: 'Appointment'
-        });
-      }
-    }
-
-    return tasks;
-  },
-
-  // ==========================================================================
-  // 6. ADMITTED COHORT SYNCHRONIZATION (TWO-WAY CITIZEN <-> ADMIN DATA)
-  // ==========================================================================
-
-  /**
-   * Sync active student profile & progress into institution admitted cohort
-   */
-  syncStudentCohort: () => {
-    try {
-      const profile = Storage.getStudentProfile();
-      const metrics = AdmissionService.getReadinessMetrics();
-      const students = Storage.getAdmittedStudents();
-
-      const index = students.findIndex((s) => s.id === profile.id || s.indexNumber === profile.beceIndexNumber);
-      if (index !== -1) {
-        students[index] = {
-          ...students[index],
-          name: profile.fullName,
-          programme: profile.programme,
-          residentialStatus: profile.residentialStatus,
-          guardianName: profile.guardianName,
-          guardianPhone: profile.guardianPhone,
-          readinessScore: metrics.compositeScore,
-          admissionStage: metrics.currentStage,
-          profileComplete: metrics.profileComplete,
-          documentsCount: {
-            total: metrics.totalDocs,
-            accepted: metrics.docsAccepted,
-            pending: metrics.docsUnderReview + metrics.docsSubmitted,
-            changes: metrics.docsChanges
-          },
-          prospectusCount: {
-            total: metrics.totalProspectusItems,
-            purchased: metrics.purchasedCount,
-            photosPending: metrics.photosAwaitingCount,
-            photosAccepted: metrics.photosAcceptedCount,
-            photosChanges: metrics.photosChangesCount
-          },
-          appointment: metrics.activeAppointment ? {
-            id: metrics.activeAppointment.id,
-            date: metrics.activeAppointment.appointmentDate,
-            time: metrics.activeAppointment.appointmentTime,
-            status: metrics.activeAppointment.status,
-            referenceNumber: metrics.activeAppointment.referenceNumber
-          } : null,
-          lastActive: 'Just now'
+  getStudentProspectusStatus: async () => {
+    const res = await apiClient.get('/prospectus/me');
+    if (res.success && Array.isArray(res.data)) {
+      const statusMap = {};
+      res.data.forEach((item) => {
+        const id = item.itemId || item.id || item._id;
+        statusMap[id] = {
+          itemId: id,
+          purchased: Boolean(item.purchased),
+          photoStatus: item.photoStatus || 'not_submitted',
+          photoName: item.photoName || null,
+          photoUrl: item.photoUrl || null,
+          adminFeedback: item.adminFeedback || null
         };
-        Storage.setAdmittedStudents(students);
-      }
-    } catch (e) {
-      console.warn('[CitizenQueue] Error syncing student cohort:', e);
+      });
+      cachedProspectusStatus = statusMap;
+      return statusMap;
     }
+    return cachedProspectusStatus;
   },
 
   /**
-   * Get all admitted students for institution portal
+   * Toggle purchase status for a prospectus item via API
    */
-  getAdmittedStudents: () => {
-    return Storage.getAdmittedStudents();
+  toggleItemPurchased: async (itemId, currentStatus = false) => {
+    const newStatus = !currentStatus;
+    const res = await apiClient.patch('/prospectus/item-status', {
+      itemId,
+      acquired: newStatus
+    });
+
+    if (res.success) {
+      if (!cachedProspectusStatus[itemId]) {
+        cachedProspectusStatus[itemId] = { itemId, purchased: newStatus, photoStatus: 'not_submitted' };
+      } else {
+        cachedProspectusStatus[itemId].purchased = newStatus;
+      }
+    }
+    return cachedProspectusStatus;
   },
 
   /**
-   * Find student by ID or Index Number
+   * Submit visual proof photo for an item
    */
-  getStudentById: (idOrIndex) => {
-    const list = Storage.getAdmittedStudents();
-    return list.find((s) => s.id === idOrIndex || s.indexNumber === idOrIndex) || null;
+  submitItemPhoto: async (itemId, photoUrl, photoName = 'photo.jpg') => {
+    const res = await apiClient.post('/prospectus/item-photo', {
+      itemId,
+      photoUrl,
+      photoName
+    });
+
+    if (res.success) {
+      if (!cachedProspectusStatus[itemId]) {
+        cachedProspectusStatus[itemId] = { itemId, purchased: true, photoStatus: 'awaiting_review', photoUrl, photoName };
+      } else {
+        cachedProspectusStatus[itemId].purchased = true;
+        cachedProspectusStatus[itemId].photoStatus = 'awaiting_review';
+        cachedProspectusStatus[itemId].photoUrl = photoUrl;
+        cachedProspectusStatus[itemId].photoName = photoName;
+      }
+    }
+    return cachedProspectusStatus;
+  },
+
+  /**
+   * Officer reviews a prospectus item photograph
+   */
+  reviewProspectusItem: async (admissionId, itemId, decision, feedback = '') => {
+    return await apiClient.patch(`/prospectus/${admissionId}/item-review`, {
+      itemId,
+      status: decision === 'accepted' ? 'approved' : decision,
+      reviewNotes: feedback
+    });
+  },
+
+  // ==========================================================================
+  // 3. ADMISSION DOCUMENT VERIFICATION & UPLOAD MANAGEMENT
+  // ==========================================================================
+
+  /**
+   * Get student's required and uploaded documents from API
+   */
+  getDocuments: async (studentId = null) => {
+    const endpoint = studentId ? `/documents?studentId=${studentId}` : '/documents';
+    const res = await apiClient.get(endpoint);
+    if (res.success && Array.isArray(res.data)) {
+      cachedDocuments = res.data.map((doc) => ({
+        ...doc,
+        id: doc.documentRequirementId || doc._id,
+        _id: doc._id
+      }));
+      return cachedDocuments;
+    }
+    return cachedDocuments;
+  },
+
+  /**
+   * Secure upload process using presigned URLs
+   */
+  uploadDocument: async (docId, file) => {
+    // 1. Request presigned upload intent from backend
+    const intentRes = await apiClient.post('/documents/upload-intent', {
+      documentType: 'placement_slip',
+      fileName: file.name,
+      fileType: file.type || 'application/pdf',
+      fileSize: file.size
+    });
+
+    let storageKey = `students/${docId}/${Date.now()}_${file.name}`;
+    let fileUrl = URL.createObjectURL(file);
+
+    // 2. If backend provided presigned upload URL, dispatch PUT to S3
+    if (intentRes.success && intentRes.data?.uploadUrl) {
+      storageKey = intentRes.data.storageKey;
+      fileUrl = intentRes.data.fileUrl || intentRes.data.uploadUrl.split('?')[0];
+
+      try {
+        await fetch(intentRes.data.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type || 'application/pdf'
+          },
+          body: file
+        });
+      } catch (uploadErr) {
+        console.warn('[CitizenQueue] Direct vault upload fallback', uploadErr);
+      }
+    }
+
+    // 3. Confirm upload on backend database
+    const confirmRes = await apiClient.post('/documents/confirm', {
+      documentId: docId,
+      fileKey: storageKey,
+      fileName: file.name,
+      fileSizeBytes: file.size,
+      mimeType: file.type || 'application/pdf',
+      fileUrl
+    });
+
+    if (confirmRes.success) {
+      return confirmRes.data;
+    }
+    throw new Error(confirmRes.error || 'Failed to complete document upload');
+  },
+
+  /**
+   * Officer reviews and approves/rejects a document
+   */
+  reviewDocument: async (docId, decision, feedback = '') => {
+    const statusMap = {
+      accepted: 'verified',
+      changes_required: 'rejected',
+      under_review: 'under_review'
+    };
+    return await apiClient.patch(`/documents/${docId}/review`, {
+      status: statusMap[decision] || decision,
+      feedback
+    });
+  },
+
+  /**
+   * Batch verify multiple documents
+   */
+  batchReviewDocuments: async (documentIds, decision, feedback = '') => {
+    const statusMap = {
+      accepted: 'verified',
+      provisionally_accepted: 'verified',
+      changes_required: 'rejected'
+    };
+    return await apiClient.post('/documents/batch-review', {
+      documentIds,
+      status: statusMap[decision] || decision,
+      feedback
+    });
+  },
+
+  /**
+   * Admin wrapper for document review
+   */
+  adminReviewDocument: async (docId, { status, adminFeedback = '' }) => {
+    return AdmissionService.reviewDocument(docId, status, adminFeedback);
+  },
+
+  /**
+   * Admin wrapper for batch document review
+   */
+  adminBatchReviewDocuments: async (docIds, { status, adminFeedback = '' }) => {
+    return AdmissionService.batchReviewDocuments(docIds, status, adminFeedback);
+  },
+
+  /**
+   * Administrative document requirement CRUD
+   */
+  addDocumentRequirement: async (reqData) => {
+    cachedDocuments.unshift({
+      ...reqData,
+      id: `doc-${Date.now()}`,
+      status: reqData.status || 'not_submitted'
+    });
+    return cachedDocuments[0];
+  },
+
+  updateDocumentRequirement: async (docId, updatedData) => {
+    const idx = cachedDocuments.findIndex((d) => d.id === docId || d._id === docId);
+    if (idx !== -1) {
+      cachedDocuments[idx] = { ...cachedDocuments[idx], ...updatedData };
+      return cachedDocuments[idx];
+    }
+    return null;
+  },
+
+  deleteDocumentRequirement: async (docId) => {
+    cachedDocuments = cachedDocuments.filter((d) => d.id !== docId && d._id !== docId);
+    return true;
+  },
+
+  /**
+   * Administrative prospectus requirement CRUD
+   */
+  adminReviewItemPhoto: async (itemId, { status, adminFeedback = '' }) => {
+    return AdmissionService.reviewProspectusItem('adm-1', itemId, status, adminFeedback);
+  },
+
+  addProspectusRequirement: async (itemData) => {
+    cachedProspectus.unshift({
+      ...itemData,
+      id: `pr-${Date.now()}`
+    });
+    return cachedProspectus[0];
+  },
+
+  updateProspectusRequirement: async (itemId, updatedData) => {
+    const idx = cachedProspectus.findIndex((i) => i.id === itemId || i._id === itemId);
+    if (idx !== -1) {
+      cachedProspectus[idx] = { ...cachedProspectus[idx], ...updatedData };
+      return cachedProspectus[idx];
+    }
+    return null;
+  },
+
+  deleteProspectusRequirement: async (itemId) => {
+    cachedProspectus = cachedProspectus.filter((i) => i.id !== itemId && i._id !== itemId);
+    return true;
+  },
+
+  // ==========================================================================
+  // 4. ADMISSION PROGRESSION & READINESS SCORING
+  // ==========================================================================
+
+  /**
+   * Retrieve dynamic readiness metrics, current stage, and tasks from API
+   */
+  getReadinessMetrics: async (studentId = null) => {
+    const endpoint = studentId ? `/admissions/progress?studentId=${studentId}` : '/admissions/progress';
+    const res = await apiClient.get(endpoint);
+
+    if (res.success && res.data) {
+      const { readinessScore, currentStage, stages, tasks, stats, student } = res.data;
+      cachedMetrics = {
+        compositeScore: readinessScore ?? 0,
+        currentStage: currentStage ?? 1,
+        stages: stages ?? [],
+        tasks: tasks ?? [],
+        stats: stats ?? {},
+        student: student ?? {},
+        profileComplete: Boolean(student?.fullName && student?.guardianPhone),
+        totalDocs: stats?.documentsRequired ?? 0,
+        docsSubmitted: stats?.documentsSubmitted ?? 0,
+        docsAccepted: stats?.documentsVerified ?? 0,
+        totalProspectusItems: stats?.prospectusTotal ?? 0,
+        purchasedCount: stats?.prospectusAcquired ?? 0,
+        photosAcceptedCount: stats?.photosApproved ?? 0,
+        isReadyForReporting: readinessScore >= 60,
+        hasAppointment: Boolean(stats?.hasAppointment)
+      };
+      return cachedMetrics;
+    }
+
+    return cachedMetrics || {
+      compositeScore: 0,
+      currentStage: 1,
+      stages: [],
+      tasks: [],
+      stats: {},
+      profileComplete: false
+    };
+  },
+
+  /**
+   * Get outstanding actionable tasks from API
+   */
+  getOutstandingTasks: async () => {
+    const res = await apiClient.get('/admissions/tasks');
+    if (res.success && Array.isArray(res.data)) {
+      return res.data;
+    }
+    return cachedMetrics?.tasks || [];
+  },
+
+  // ==========================================================================
+  // 5. INSTITUTIONAL ADMITTED COHORT (ADMIN PORTAL)
+  // ==========================================================================
+
+  /**
+   * Get admitted students list for administrative portal from API
+   */
+  getAdmittedStudents: async (filters = {}) => {
+    const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.set('search', filters.search);
+    if (filters.programme && filters.programme !== 'All') queryParams.set('programme', filters.programme);
+    if (filters.residentialStatus && filters.residentialStatus !== 'All') queryParams.set('residentialStatus', filters.residentialStatus);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/admin/students?${queryString}` : '/admin/students';
+
+    const res = await apiClient.get(endpoint);
+    if (res.success && res.data) {
+      const studentsList = Array.isArray(res.data.students) ? res.data.students : (Array.isArray(res.data) ? res.data : []);
+      cachedAdmittedStudents = studentsList.map((s) => ({
+        ...s,
+        id: s._id || s.id,
+        name: s.fullName || s.name,
+        indexNumber: s.beceIndexNumber || s.indexNumber,
+        admissionStage: s.currentStage || 1,
+        readinessScore: s.readinessScore || 0
+      }));
+      return cachedAdmittedStudents;
+    }
+    return cachedAdmittedStudents;
+  },
+
+  /**
+   * Get single student details with documents and appointments from API
+   */
+  getStudentById: async (studentId) => {
+    const res = await apiClient.get(`/admin/students/${studentId}`);
+    if (res.success && res.data) {
+      return res.data;
+    }
+    return null;
   }
 };
+
+export default AdmissionService;

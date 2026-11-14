@@ -31,59 +31,68 @@ export default function SignInPage() {
 
   // Student Form State
   const [studentIdentifier, setStudentIdentifier] = useState('101245089');
-  const [studentPin, setStudentPin] = useState('2026');
+  const [studentPin, setStudentPin] = useState('Password123!');
   const [showStudentPin, setShowStudentPin] = useState(false);
 
   // Admin Form State
-  const [adminEmail, setAdminEmail] = useState('admissions-desk@achimota.edu.gh');
-  const [adminPassword, setAdminPassword] = useState('staff2026');
+  const [adminEmail, setAdminEmail] = useState('admin@achimota.edu.gh');
+  const [adminPassword, setAdminPassword] = useState('Password123!');
   const [adminSchool, setAdminSchool] = useState('Achimota Senior High School');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle student login submit
-  const handleStudentSubmit = (e) => {
+  const handleStudentSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+    setIsSubmitting(true);
 
     if (!studentIdentifier.trim()) {
-      setFormError('Please enter your 10-digit BECE Index Number or Phone Number.');
+      setFormError('Please enter your BECE Index Number or Phone Number.');
+      setIsSubmitting(false);
       return;
     }
 
-    loginAsCitizen({
-      fullName: 'Emmanuel Mensah',
+    const res = await loginAsCitizen({
+      identifier: studentIdentifier.trim(),
       beceIndexNumber: studentIdentifier.trim(),
-      guardianName: 'Kwame Mensah',
-      guardianPhone: '+233 24 411 2233',
-      guardianEmail: 'kwame.mensah@example.com',
-      assignedSchool: 'Achimota Senior High School',
-      programme: 'General Science',
-      residentialStatus: 'Boarding'
+      password: studentPin.trim() || 'Password123!'
     });
 
-    navigate('/dashboard');
+    setIsSubmitting(false);
+    if (res.success) {
+      navigate('/dashboard');
+    } else {
+      setFormError(res.error || 'Authentication failed. Please verify your credentials.');
+    }
   };
 
   // Handle admin login submit
-  const handleAdminSubmit = (e) => {
+  const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+    setIsSubmitting(true);
 
     if (!adminEmail.trim()) {
       setFormError('Please enter your staff institutional email address.');
+      setIsSubmitting(false);
       return;
     }
 
-    loginAsAdmin({
-      name: 'Admissions Officer Addo',
+    const res = await loginAsAdmin({
       email: adminEmail.trim(),
-      institutionName: adminSchool,
-      institutionId: 'inst-1'
+      identifier: adminEmail.trim(),
+      password: adminPassword.trim() || 'Password123!'
     });
 
-    navigate('/admin');
+    setIsSubmitting(false);
+    if (res.success) {
+      navigate('/admin');
+    } else {
+      setFormError(res.error || 'Staff authentication failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -277,25 +286,25 @@ export default function SignInPage() {
                 type="button"
                 onClick={() => {
                   setStudentIdentifier('101245089');
-                  setStudentPin('2026');
+                  setStudentPin('Password123!');
                 }}
                 className="text-[11px] font-semibold text-cqTeal-700 hover:text-cqTeal-800 flex items-center gap-1.5 transition-colors"
               >
                 <Sparkles size={12} />
-                <span>Fill sample student credentials (Index: 101245089 • PIN: 2026)</span>
+                <span>Fill sample student credentials (Index: 101245089 • Pass: Password123!)</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => {
-                  setAdminEmail('admissions-desk@achimota.edu.gh');
-                  setAdminPassword('staff2026');
+                  setAdminEmail('admin@achimota.edu.gh');
+                  setAdminPassword('Password123!');
                   setAdminSchool('Achimota Senior High School');
                 }}
                 className="text-[11px] font-semibold text-cqTeal-700 hover:text-cqTeal-800 flex items-center gap-1.5 transition-colors"
               >
                 <Sparkles size={12} />
-                <span>Fill sample staff credentials</span>
+                <span>Fill sample staff credentials (admin@achimota.edu.gh • Password123!)</span>
               </button>
             )}
           </div>

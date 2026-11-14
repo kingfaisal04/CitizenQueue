@@ -21,7 +21,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { ServiceService } from '../../services/serviceService';
-import { Storage } from '../../services/storageService';
 
 export default function AdminAvailabilityPage() {
   const [services, setServices] = useState([]);
@@ -34,14 +33,18 @@ export default function AdminAvailabilityPage() {
   const [newSlotTime, setNewSlotTime] = useState('12:30 PM');
   const [newSlotCapacity, setNewSlotCapacity] = useState(8);
 
-  const loadData = () => {
-    const srvs = ServiceService.getAll();
-    setServices(srvs);
-    if (srvs.length > 0 && !selectedServiceId) {
-      setSelectedServiceId(srvs[0].id);
-      setSchedule(ServiceService.getAvailability(srvs[0].id));
-    } else if (selectedServiceId) {
-      setSchedule(ServiceService.getAvailability(selectedServiceId));
+  const loadData = async () => {
+    try {
+      const srvs = await ServiceService.getAll();
+      if (Array.isArray(srvs)) setServices(srvs);
+      const targetId = selectedServiceId || srvs[0]?.id || 'srv-101';
+      if (!selectedServiceId && srvs.length > 0) {
+        setSelectedServiceId(targetId);
+      }
+      const sched = await ServiceService.getAvailability(targetId);
+      if (Array.isArray(sched)) setSchedule(sched);
+    } catch (err) {
+      console.error('Failed to load availability:', err);
     }
   };
 
@@ -49,36 +52,39 @@ export default function AdminAvailabilityPage() {
     loadData();
   }, [selectedServiceId]);
 
-  const handleSelectService = (id) => {
+  const handleSelectService = async (id) => {
     setSelectedServiceId(id);
-    setSchedule(ServiceService.getAvailability(id));
+    const sched = await ServiceService.getAvailability(id);
+    if (Array.isArray(sched)) setSchedule(sched);
   };
 
   // Adjust capacity for a slot
-  const handleCapacityChange = (slotId, newCapacity) => {
-    const updated = ServiceService.updateSlotCapacity(
+  const handleCapacityChange = async (slotId, newCapacity) => {
+    const updated = await ServiceService.updateSlotCapacity(
       selectedServiceId,
       slotId,
       Number(newCapacity)
     );
     if (updated) {
-      setSchedule(ServiceService.getAvailability(selectedServiceId));
+      const sched = await ServiceService.getAvailability(selectedServiceId);
+      if (Array.isArray(sched)) setSchedule(sched);
       setFeedback(`Slot capacity updated to ${newCapacity}`);
       setTimeout(() => setFeedback(''), 2000);
     }
   };
 
   // Add new slot
-  const handleAddSlot = (e) => {
+  const handleAddSlot = async (e) => {
     e.preventDefault();
     if (!newSlotTime.trim() || !newSlotDate.trim()) return;
 
-    ServiceService.addSlot(selectedServiceId, newSlotDate.trim(), {
+    await ServiceService.addSlot(selectedServiceId, newSlotDate.trim(), {
       time: newSlotTime.trim(),
       capacity: Number(newSlotCapacity) || 6
     });
 
-    setSchedule(ServiceService.getAvailability(selectedServiceId));
+    const sched = await ServiceService.getAvailability(selectedServiceId);
+    if (Array.isArray(sched)) setSchedule(sched);
     setFeedback(`New slot ${newSlotTime} added to ${newSlotDate}!`);
     setTimeout(() => setFeedback(''), 2500);
   };

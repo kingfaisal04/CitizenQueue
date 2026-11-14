@@ -9,11 +9,10 @@
  * Includes global toast feedback provider (AppProvider) and auth state (AuthProvider).
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
-import { initializeStorage } from './services/storageService';
 
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
@@ -55,11 +54,6 @@ import AdminRegisterPage from './pages/admin/AdminRegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
-  // Ensure local storage has demonstration dataset seeded on startup
-  useEffect(() => {
-    initializeStorage();
-  }, []);
-
   return (
     <ErrorBoundary>
       <AuthProvider>

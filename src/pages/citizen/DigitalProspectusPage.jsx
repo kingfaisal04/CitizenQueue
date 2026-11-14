@@ -48,22 +48,38 @@ export default function DigitalProspectusPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackToast, setFeedbackToast] = useState('');
   const [previewPhoto, setPreviewPhoto] = useState(null);
-  const profile = AdmissionService.getProfile();
 
   useEffect(() => {
-    setProspectus(AdmissionService.getProspectus());
-    setGesFreeItems(AdmissionService.getGesFreeItems());
-    setItemStatuses(AdmissionService.getStudentProspectusStatus());
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const [p, items, statuses] = await Promise.all([
+          AdmissionService.getProfile(),
+          AdmissionService.getProspectus(),
+          AdmissionService.getStudentProspectusStatus()
+        ]);
+        const free = AdmissionService.getGesFreeItems();
 
-    // Auto-detect gender preference from profile if available
-    if (profile?.gender) {
-      const g = profile.gender.toLowerCase();
-      if (g.includes('fem') || g.includes('girl') || g.includes('woman')) {
-        setSelectedGender('girl');
-      } else {
-        setSelectedGender('boy');
+        if (isMounted) {
+          if (Array.isArray(items)) setProspectus(items);
+          if (Array.isArray(free)) setGesFreeItems(free);
+          if (statuses) setItemStatuses(statuses);
+
+          if (p?.gender) {
+            const g = p.gender.toLowerCase();
+            if (g.includes('fem') || g.includes('girl') || g.includes('woman')) {
+              setSelectedGender('girl');
+            } else {
+              setSelectedGender('boy');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load prospectus:', err);
       }
     }
+    loadData();
+    return () => { isMounted = false; };
   }, []);
 
   const showToast = (msg) => {
@@ -72,11 +88,14 @@ export default function DigitalProspectusPage() {
   };
 
   // Toggle single item acquired status
-  const handleTogglePurchased = (itemId) => {
-    const updated = AdmissionService.toggleItemPurchased(itemId);
-    setItemStatuses({ ...updated });
-    const isNowAcquired = updated[itemId]?.purchased;
-    showToast(isNowAcquired ? 'Item marked as acquired ✓' : 'Item marked as pending');
+  const handleTogglePurchased = async (itemId) => {
+    const isCurrentlyAcquired = Boolean(itemStatuses[itemId]?.purchased);
+    const updated = await AdmissionService.toggleItemPurchased(itemId, isCurrentlyAcquired);
+    if (updated) {
+      setItemStatuses({ ...updated });
+      const isNowAcquired = updated[itemId]?.purchased;
+      showToast(isNowAcquired ? 'Item marked as acquired ✓' : 'Item marked as pending');
+    }
   };
 
   // Optional image attachment
@@ -90,23 +109,24 @@ export default function DigitalProspectusPage() {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const dataUrl = reader.result;
-      const updated = AdmissionService.submitItemPhoto(item.id, {
-        photoUrl: dataUrl,
-        photoName: file.name
-      });
-      setItemStatuses({ ...updated });
-      showToast(`Photo attached for "${item.name}"`);
+      const updated = await AdmissionService.submitItemPhoto(item.id, dataUrl, file.name);
+      if (updated) {
+        setItemStatuses({ ...updated });
+        showToast(`Photo attached for "${item.name}"`);
+      }
     };
     reader.readAsDataURL(file);
   };
 
   // Remove optional image
-  const handleRemovePhoto = (e, itemId) => {
+  const handleRemovePhoto = async (e, itemId) => {
     e.stopPropagation();
-    const updated = AdmissionService.removeItemPhoto(itemId);
-    setItemStatuses({ ...updated });
+    if (typeof AdmissionService.removeItemPhoto === 'function') {
+      const updated = await AdmissionService.removeItemPhoto(itemId);
+      if (updated) setItemStatuses({ ...updated });
+    }
     showToast('Photo removed');
   };
 

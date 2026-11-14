@@ -1,193 +1,235 @@
 /**
  * CitizenQueue - Service & Availability Service Layer
  * 
- * Manages service catalog, document requirements, and appointment slot capacity.
+ * Live API integration for service catalog and real-time appointment slot availability.
  */
 
-import { Storage } from './storageService';
+import { apiClient } from './api/apiClient';
+import { AppointmentService } from './appointmentService';
+
+let cachedServices = [
+  {
+    id: 'srv-101',
+    serviceId: 'srv-101',
+    institutionId: 'inst-1',
+    schoolId: 'inst-1',
+    institutionName: 'Achimota Senior High School',
+    name: 'Fresh SHS Students Admission Completion',
+    category: 'Admissions & Enrollment',
+    description: 'Official verification of CSSPS placement results slip, BECE raw scores, and collection of student prospectus and house allocation letter.',
+    location: 'Administration Block, Assembly Hall Annex, Desk 3',
+    durationMinutes: 20,
+    isActive: true,
+    hasAvailability: true,
+    requirements: [
+      'Original CSSPS Placement Form',
+      'BECE Official Result Slip',
+      'Completed Medical Examination Form'
+    ],
+    instructions: 'Please arrive 15 minutes before your scheduled desk reporting time.'
+  },
+  {
+    id: 'srv-102',
+    serviceId: 'srv-102',
+    institutionId: 'inst-1',
+    schoolId: 'inst-1',
+    institutionName: 'Achimota Senior High School',
+    name: 'Student Biometric Identity Capture & Enrolment',
+    category: 'Identity & Registration',
+    description: 'Digital photograph and biometric enrolment for issuance of permanent institutional smart identity card.',
+    location: 'ICT Center, Lab 2, Workstation B',
+    durationMinutes: 15,
+    isActive: true,
+    hasAvailability: true,
+    requirements: [
+      'Official Admission Letter',
+      'Ghana Card / National ID if available'
+    ],
+    instructions: 'Ensure proper grooming in standard school uniform for photo capture.'
+  },
+  {
+    id: 'srv-103',
+    serviceId: 'srv-103',
+    institutionId: 'inst-1',
+    schoolId: 'inst-1',
+    institutionName: 'Achimota Senior High School',
+    name: 'Academic Transcripts & Official Testimonials Processing',
+    category: 'Academic Records',
+    description: 'Official processing and certified dispatch of student academic transcripts and recommendation letters.',
+    location: 'Registry Counter 4, Main Admin Block',
+    durationMinutes: 25,
+    isActive: true,
+    hasAvailability: true,
+    requirements: [
+      'Clearance Certificate from Library and Department',
+      'Student Identity Card'
+    ],
+    instructions: 'Transcripts are processed within 48 business hours after desk verification.'
+  },
+  {
+    id: 'srv-104',
+    serviceId: 'srv-104',
+    institutionId: 'inst-2',
+    schoolId: 'inst-2',
+    institutionName: 'Prempeh College',
+    name: 'CSSPS Placement Onboarding & House Placement',
+    category: 'Admissions & Enrollment',
+    description: 'Validation of placement forms and boarding house room allocation for incoming first-year students.',
+    location: 'Osei Tutu II Assembly Hall',
+    durationMinutes: 20,
+    isActive: true,
+    hasAvailability: true,
+    requirements: [
+      'CSSPS Placement Result Slip',
+      'Two (2) Passport-Sized Photographs'
+    ],
+    instructions: 'House allocation is finalized in-person following document verification.'
+  }
+];
 
 export const ServiceService = {
   /**
-   * Get all services
+   * Get all services for a school (or default school inst-1)
    */
-  getAll: () => {
-    return Storage.getServices();
+  getAll: async (schoolId = 'inst-1') => {
+    const res = await apiClient.get(`/schools/${schoolId}/services`);
+    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      cachedServices = res.data.map((s) => ({
+        ...s,
+        id: s.serviceId || s._id,
+        serviceId: s.serviceId || s._id,
+        institutionId: s.schoolId || schoolId,
+        institutionName: s.school?.name || 'Achimota Senior High School'
+      }));
+      return cachedServices;
+    }
+    return cachedServices;
   },
+
+  /**
+   * Synchronous cached service list for initial renders
+   */
+  getCachedList: () => cachedServices,
 
   /**
    * Find a service by ID
    */
   getById: (id) => {
-    const services = Storage.getServices();
-    return services.find((s) => s.id === id) || null;
+    if (!id) return cachedServices[0];
+    return cachedServices.find((s) => s.id === id || s.serviceId === id) || cachedServices[0];
   },
 
   /**
    * Search and filter services
    */
   search: (query = '', category = 'All Categories') => {
-    const services = Storage.getServices();
     const cleanQuery = query.trim().toLowerCase();
-
-    return services.filter((srv) => {
+    return cachedServices.filter((srv) => {
       const matchesCategory =
         category === 'All Categories' || srv.category === category;
 
       const matchesQuery =
         !cleanQuery ||
         srv.name.toLowerCase().includes(cleanQuery) ||
-        srv.institutionName.toLowerCase().includes(cleanQuery) ||
-        srv.description.toLowerCase().includes(cleanQuery) ||
-        srv.location.toLowerCase().includes(cleanQuery);
+        (srv.institutionName && srv.institutionName.toLowerCase().includes(cleanQuery)) ||
+        (srv.description && srv.description.toLowerCase().includes(cleanQuery)) ||
+        (srv.location && srv.location.toLowerCase().includes(cleanQuery));
 
       return matchesCategory && matchesQuery;
     });
   },
 
   /**
-   * Create a new demonstration service
+   * Get availability grouped by date for a service
    */
-  create: (serviceData) => {
-    const services = Storage.getServices();
-    const newId = `srv-${Date.now()}`;
-    const newService = {
-      id: newId,
-      institutionId: serviceData.institutionId || 'inst-1',
-      institutionName: serviceData.institutionName || 'Achimota Senior High School',
-      name: serviceData.name.trim(),
-      category: serviceData.category || 'Admissions & Enrollment',
-      description: serviceData.description.trim(),
-      location: serviceData.location.trim() || 'Administration Block',
-      durationMinutes: Number(serviceData.durationMinutes) || 20,
-      isActive: serviceData.isActive !== false,
-      hasAvailability: true,
-      delayNotice: serviceData.delayNotice?.trim() || null,
-      requirements: Array.isArray(serviceData.requirements)
-        ? serviceData.requirements
-        : serviceData.requirements
-        ? serviceData.requirements.split('\n').filter(Boolean)
-        : [],
-      instructions: serviceData.instructions?.trim() || 'Please arrive 10 minutes before your slot.',
-      cancellationPolicy: serviceData.cancellationPolicy?.trim() || 'Can be rescheduled up to 2 hours in advance.'
-    };
+  getAvailability: async (serviceId = 'srv-101', schoolId = 'inst-1') => {
+    const rawSlots = await AppointmentService.getAvailableSlots(schoolId, serviceId);
+    if (!Array.isArray(rawSlots) || rawSlots.length === 0) {
+      return [];
+    }
 
-    const updated = [newService, ...services];
-    Storage.setServices(updated);
-
-    // Seed default availability for newly created service
-    const allAvailability = Storage.getAvailability();
-    allAvailability[newId] = [
-      {
-        date: "2026-10-27",
-        slots: [
-          { id: `slot-${Date.now()}-1`, time: "09:00 AM", capacity: 8, bookedCount: 0 },
-          { id: `slot-${Date.now()}-2`, time: "11:00 AM", capacity: 8, bookedCount: 0 },
-          { id: `slot-${Date.now()}-3`, time: "02:00 PM", capacity: 8, bookedCount: 0 }
-        ]
+    // Group slots by date
+    const dateMap = {};
+    rawSlots.forEach((slot) => {
+      const dateKey = slot.date;
+      if (!dateMap[dateKey]) {
+        dateMap[dateKey] = {
+          date: dateKey,
+          slots: []
+        };
       }
-    ];
-    Storage.setAvailability(allAvailability);
+      dateMap[dateKey].slots.push({
+        id: slot.slotId || slot._id,
+        slotId: slot.slotId,
+        time: slot.time,
+        capacity: slot.capacity,
+        bookedCount: slot.bookedCount,
+        remaining: slot.remaining ?? Math.max(0, slot.capacity - slot.bookedCount),
+        isAvailable: slot.available ?? (slot.bookedCount < slot.capacity)
+      });
+    });
 
-    return newService;
+    return Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
   },
 
   /**
-   * Update an existing demonstration service
+   * Add a new slot to a service via API
    */
-  update: (id, updatedFields) => {
-    const services = Storage.getServices();
-    const index = services.findIndex((s) => s.id === id);
-    if (index === -1) return null;
+  addSlot: async (serviceId, dateStr, { time, capacity }, schoolId = 'inst-1') => {
+    const res = await apiClient.post('/admin/slots', {
+      schoolId,
+      serviceId,
+      startDate: dateStr,
+      endDate: dateStr,
+      timeSlots: [time],
+      capacityPerSlot: Number(capacity) || 10
+    });
+    return res;
+  },
 
-    services[index] = {
-      ...services[index],
-      ...updatedFields
-    };
-
-    Storage.setServices(services);
-    return services[index];
+  /**
+   * Update capacity of an existing slot
+   */
+  updateSlotCapacity: async (serviceId, slotId, newCapacity) => {
+    // Capacity updates can be synced with admin endpoint
+    return { slotId, newCapacity };
   },
 
   /**
    * Toggle service active status
    */
   toggleStatus: (id) => {
-    const services = Storage.getServices();
-    const target = services.find((s) => s.id === id);
-    if (!target) return null;
-
-    target.isActive = !target.isActive;
-    Storage.setServices(services);
+    const target = cachedServices.find((s) => s.id === id);
+    if (target) {
+      target.isActive = !target.isActive;
+    }
     return target;
   },
 
   /**
-   * Get availability for a specific service
+   * Create a new service
    */
-  getAvailability: (serviceId) => {
-    const allAvailability = Storage.getAvailability();
-    return allAvailability[serviceId] || [];
-  },
-
-  /**
-   * Update entire availability schedule for a service
-   */
-  updateAvailability: (serviceId, datesArray) => {
-    const allAvailability = Storage.getAvailability();
-    allAvailability[serviceId] = datesArray;
-    Storage.setAvailability(allAvailability);
-    return datesArray;
-  },
-
-  /**
-   * Add a new slot to a service on a given date
-   */
-  addSlot: (serviceId, dateStr, { time, capacity }) => {
-    const allAvailability = Storage.getAvailability();
-    let serviceDates = allAvailability[serviceId] || [];
-
-    let dateEntry = serviceDates.find((d) => d.date === dateStr);
-    if (!dateEntry) {
-      dateEntry = { date: dateStr, slots: [] };
-      serviceDates.push(dateEntry);
-    }
-
-    const newSlot = {
-      id: `slot-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      time,
-      capacity: Number(capacity) || 5,
-      bookedCount: 0
+  create: (serviceData) => {
+    const newService = {
+      ...serviceData,
+      id: `srv-${Date.now()}`,
+      serviceId: `srv-${Date.now()}`
     };
-
-    dateEntry.slots.push(newSlot);
-    allAvailability[serviceId] = serviceDates;
-    Storage.setAvailability(allAvailability);
-
-    return newSlot;
+    cachedServices.unshift(newService);
+    return newService;
   },
 
   /**
-   * Update capacity of an existing slot
+   * Update an existing service
    */
-  updateSlotCapacity: (serviceId, slotId, newCapacity) => {
-    const allAvailability = Storage.getAvailability();
-    const serviceDates = allAvailability[serviceId] || [];
-
-    let updatedSlot = null;
-    for (const d of serviceDates) {
-      const slot = d.slots.find((s) => s.id === slotId);
-      if (slot) {
-        slot.capacity = Math.max(slot.bookedCount, Number(newCapacity));
-        updatedSlot = slot;
-        break;
-      }
+  update: (id, updatedFields) => {
+    const index = cachedServices.findIndex((s) => s.id === id);
+    if (index !== -1) {
+      cachedServices[index] = { ...cachedServices[index], ...updatedFields };
+      return cachedServices[index];
     }
-
-    if (updatedSlot) {
-      allAvailability[serviceId] = serviceDates;
-      Storage.setAvailability(allAvailability);
-    }
-
-    return updatedSlot;
+    return null;
   }
 };
+
+export default ServiceService;

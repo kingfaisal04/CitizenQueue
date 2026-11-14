@@ -7,7 +7,7 @@
 
 export const ROLES = {
   GUEST: 'guest',
-  STUDENT: 'citizen',
+  STUDENT: 'student',
   ADMIN: 'admin'
 };
 
@@ -32,8 +32,9 @@ export const DOCUMENT_STATUSES = {
 };
 
 export const PHOTO_STATUSES = {
-  NONE: 'none',
+  NOT_SUBMITTED: 'not_submitted',
   AWAITING_REVIEW: 'awaiting_review',
+  PROVISIONALLY_ACCEPTED: 'provisionally_accepted',
   ACCEPTED: 'accepted',
   CHANGES_REQUIRED: 'changes_required'
 };
@@ -67,9 +68,11 @@ export const GHANA_SHS_PROGRAMMES = [
 export const RESIDENTIAL_STATUSES = ['Boarding', 'Day'];
 
 export const API_CONFIG = {
-  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api/v1',
-  TIMEOUT_MS: 10000,
-  SIMULATE_NETWORK_DELAY_MS: 200,
-  USE_BACKEND: false // When set to true in production, apiClient calls live REST endpoints
+  BASE_URL:
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+    'http://localhost:5000/api/v1',
+  TIMEOUT_MS: 15000,
+  SIMULATE_NETWORK_DELAY_MS: 0,
+  USE_BACKEND: true
 };
-

@@ -40,7 +40,7 @@ const DOCUMENT_CATEGORIES = [
 ];
 
 export default function DocumentCentrePage() {
-  const [documents, setDocuments] = useState(() => AdmissionService.getDocuments());
+  const [documents, setDocuments] = useState([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState('existing'); // 'existing' | 'custom'
   const [targetDocId, setTargetDocId] = useState('');
@@ -58,9 +58,20 @@ export default function DocumentCentrePage() {
   const [previewModalDoc, setPreviewModalDoc] = useState(null);
   const [feedbackToast, setFeedbackToast] = useState('');
 
-  const loadDocuments = () => {
-    setDocuments(AdmissionService.getDocuments());
+  const loadDocuments = async () => {
+    try {
+      const docs = await AdmissionService.getDocuments();
+      if (Array.isArray(docs)) {
+        setDocuments(docs);
+      }
+    } catch (err) {
+      console.error('Failed to load documents:', err);
+    }
   };
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
 
   const showToast = (msg) => {
     setFeedbackToast(msg);
@@ -115,14 +126,16 @@ export default function DocumentCentrePage() {
         name: file.name,
         sizeFormatted: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
         dataUrl: reader.result,
-        type: file.type
+        type: file.type,
+        size: file.size,
+        rawFile: file
       });
     };
     reader.readAsDataURL(file);
   };
 
   // Execute upload submission
-  const handleConfirmUpload = (e) => {
+  const handleConfirmUpload = async (e) => {
     e.preventDefault();
     if (!stagedFile) {
       setFileError('Please select a file to upload before submitting.');
@@ -135,48 +148,51 @@ export default function DocumentCentrePage() {
     }
 
     setIsUploading(true);
-    setUploadProgress(25);
+    setUploadProgress(40);
 
-    setTimeout(() => {
-      setUploadProgress(65);
-      setTimeout(() => {
+    try {
+      if (uploadMode === 'existing') {
+        const targetDoc = documents.find((d) => d.id === targetDocId);
+        await AdmissionService.uploadDocument(targetDocId, stagedFile.rawFile || {
+          name: stagedFile.name,
+          type: stagedFile.type,
+          size: stagedFile.size
+        });
         setUploadProgress(100);
-        setTimeout(() => {
-          if (uploadMode === 'existing') {
-            const targetDoc = documents.find((d) => d.id === targetDocId);
-            AdmissionService.uploadDocument(targetDocId, {
-              fileName: stagedFile.name,
-              fileSize: stagedFile.sizeFormatted,
-              fileUrl: stagedFile.dataUrl
-            });
-            showToast(`"${targetDoc?.name || 'Document'}" submitted successfully for desk verification!`);
-          } else {
-            AdmissionService.addDocumentRequirement({
-              name: customDocName.trim(),
-              category: customDocCategory,
-              description: customDocDesc.trim() || 'Additional candidate document submission.',
-              required: false,
-              fileName: stagedFile.name,
-              fileSize: stagedFile.sizeFormatted,
-              fileUrl: stagedFile.dataUrl,
-              status: 'submitted'
-            });
-            showToast(`New document "${customDocName.trim()}" uploaded and submitted!`);
-          }
+        showToast(`"${targetDoc?.name || 'Document'}" submitted successfully for desk verification!`);
+      } else {
+        if (typeof AdmissionService.addDocumentRequirement === 'function') {
+          await AdmissionService.addDocumentRequirement({
+            name: customDocName.trim(),
+            category: customDocCategory,
+            description: customDocDesc.trim() || 'Additional candidate document submission.',
+            required: false,
+            fileName: stagedFile.name,
+            fileSize: stagedFile.sizeFormatted,
+            fileUrl: stagedFile.dataUrl,
+            status: 'submitted'
+          });
+        }
+        setUploadProgress(100);
+        showToast(`New document "${customDocName.trim()}" uploaded and submitted!`);
+      }
 
-          loadDocuments();
-          setIsUploading(false);
-          setIsUploadModalOpen(false);
-          setStagedFile(null);
-        }, 300);
-      }, 400);
-    }, 300);
+      await loadDocuments();
+      setIsUploading(false);
+      setIsUploadModalOpen(false);
+      setStagedFile(null);
+    } catch (err) {
+      setIsUploading(false);
+      setFileError(err.message || 'Failed to complete document upload.');
+    }
   };
 
   // Remove document
-  const handleRemove = (docId, docName) => {
-    AdmissionService.removeDocument(docId);
-    loadDocuments();
+  const handleRemove = async (docId, docName) => {
+    if (typeof AdmissionService.removeDocument === 'function') {
+      await AdmissionService.removeDocument(docId);
+    }
+    await loadDocuments();
     showToast(`Removed submission for ${docName}`);
   };
 

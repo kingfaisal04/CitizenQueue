@@ -41,8 +41,15 @@ export default function AdminProspectusPage() {
   });
   const [toastMessage, setToastMessage] = useState('');
 
-  const loadData = () => {
-    setProspectus(AdmissionService.getProspectus());
+  const loadData = async () => {
+    try {
+      const items = await AdmissionService.getProspectus();
+      if (Array.isArray(items)) {
+        setProspectus(items);
+      }
+    } catch (err) {
+      console.error('Failed to load prospectus:', err);
+    }
   };
 
   useEffect(() => {
@@ -82,27 +89,27 @@ export default function AdminProspectusPage() {
     setShowModal(true);
   };
 
-  const handleDelete = (id, name) => {
+  const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to remove "${name}" from the school prospectus?`)) {
-      AdmissionService.deleteProspectusRequirement(id);
-      loadData();
+      await AdmissionService.deleteProspectusRequirement(id);
+      await loadData();
       showToast(`Removed "${name}" from prospectus.`);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.specification.trim()) return;
 
     if (editingItem) {
-      AdmissionService.updateProspectusRequirement(editingItem.id, formData);
+      await AdmissionService.updateProspectusRequirement(editingItem.id, formData);
       showToast(`Updated "${formData.name}" specifications.`);
     } else {
-      AdmissionService.addProspectusRequirement(formData);
+      await AdmissionService.addProspectusRequirement(formData);
       showToast(`Added new requirement "${formData.name}".`);
     }
 
-    loadData();
+    await loadData();
     setShowModal(false);
   };
 

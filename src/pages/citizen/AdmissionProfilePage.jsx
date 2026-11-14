@@ -7,7 +7,7 @@
  * residential preference, and placement slip demo upload.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -26,10 +26,25 @@ import StageNavigation from '../../components/common/StageNavigation';
 
 export default function AdmissionProfilePage() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(() => AdmissionService.getProfile());
-  const [formData, setFormData] = useState(() => AdmissionService.getProfile());
+  const [profile, setProfile] = useState(() => AdmissionService.getCachedProfile());
+  const [formData, setFormData] = useState(() => AdmissionService.getCachedProfile());
   const [isSaved, setIsSaved] = useState(false);
-  const [placementFilePreview, setPlacementFilePreview] = useState(() => AdmissionService.getProfile().placementSlipFileName || null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [placementFilePreview, setPlacementFilePreview] = useState(() => AdmissionService.getCachedProfile().placementSlipFileName || null);
+
+  useEffect(() => {
+    let isMounted = true;
+    AdmissionService.getProfile().then((p) => {
+      if (isMounted && p) {
+        setProfile(p);
+        setFormData(p);
+        if (p.placementSlipFileName) {
+          setPlacementFilePreview(p.placementSlipFileName);
+        }
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,23 +55,38 @@ export default function AdmissionProfilePage() {
     setIsSaved(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const updated = AdmissionService.updateProfile({
-      ...formData,
-      placementSlipUploaded: Boolean(placementFilePreview),
-      placementSlipFileName: placementFilePreview
-    });
-    setProfile(updated);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsSaving(true);
+    try {
+      const updated = await AdmissionService.updateProfile({
+        ...formData,
+        placementSlipUploaded: Boolean(placementFilePreview),
+        placementSlipFileName: placementFilePreview
+      });
+      if (updated) {
+        setProfile(updated);
+        setFormData(updated);
+      }
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Simulated file upload for sample placement slip
-  const handleFileUpload = (e) => {
+  // Real file upload for sample placement slip
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setPlacementFilePreview(file.name);
+      try {
+        await AdmissionService.uploadDocument('doc-1', file);
+      } catch (err) {
+        console.warn('Placement upload note:', err);
+      }
       setFormData((prev) => ({
         ...prev,
         placementSlipUploaded: true,

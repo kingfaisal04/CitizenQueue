@@ -47,13 +47,14 @@ export default function RegisterPage() {
     guardianPhone: '',
     guardianEmail: '',
     homeTown: '',
-    pin: '2026',
-    confirmPin: '2026'
+    pin: 'Password123!',
+    confirmPin: 'Password123!'
   });
 
   const [showPin, setShowPin] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,13 +80,13 @@ export default function RegisterPage() {
       guardianPhone: '+233 24 411 2233',
       guardianEmail: 'kwame.mensah@example.com',
       homeTown: 'Kasoa, Central Region',
-      pin: '2026',
-      confirmPin: '2026'
+      pin: 'Password123!',
+      confirmPin: 'Password123!'
     });
     setFormError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -115,16 +116,38 @@ export default function RegisterPage() {
       return;
     }
 
-    // Register candidate via context & admission service
-    registerCandidate({
-      ...formData,
-      id: `std-${formData.beceIndexNumber.trim()}`
-    });
+    setIsSubmitting(true);
+    try {
+      const res = await registerCandidate({
+        fullName: formData.fullName.trim(),
+        beceIndexNumber: formData.beceIndexNumber.trim(),
+        assignedSchool: formData.assignedSchool,
+        programme: formData.programme,
+        residentialStatus: formData.residentialStatus,
+        aggregateScore: formData.aggregateScore,
+        juniorHighSchool: formData.juniorHighSchool,
+        guardianName: formData.guardianName.trim(),
+        guardianRelation: formData.guardianRelation,
+        guardianPhone: formData.guardianPhone.trim(),
+        guardianEmail: formData.guardianEmail.trim() || undefined,
+        homeTown: formData.homeTown,
+        password: formData.pin || 'Password123!',
+        confirmPassword: formData.confirmPin || 'Password123!'
+      });
 
-    setFormSuccess(true);
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 600);
+      if (res.success) {
+        setFormSuccess(true);
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 600);
+      } else {
+        setFormError(res.error || 'Registration failed. Please check your details.');
+      }
+    } catch (err) {
+      setFormError(err.message || 'An unexpected registration error occurred.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

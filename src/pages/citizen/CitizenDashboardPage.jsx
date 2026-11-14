@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { AdmissionService } from '../../services/admissionService';
 import { AppointmentService } from '../../services/appointmentService';
-import { Storage } from '../../services/storageService';
+import { notificationService } from '../../services/notificationService';
 import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import StageNavigation from '../../components/common/StageNavigation';
@@ -36,7 +36,7 @@ import StageNavigation from '../../components/common/StageNavigation';
 export default function CitizenDashboardPage() {
   const { currentUser } = useAuth();
 
-  const [profile, setProfile] = useState(AdmissionService.getProfile());
+  const [profile, setProfile] = useState(() => AdmissionService.getCachedProfile());
   const [metrics, setMetrics] = useState(null);
   const [outstandingTasks, setOutstandingTasks] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -46,23 +46,34 @@ export default function CitizenDashboardPage() {
   const [cancelModalApt, setCancelModalApt] = useState(null);
   const [cancelReason, setCancelReason] = useState('Change of family schedule');
 
-  const loadDashboardData = () => {
-    setProfile(AdmissionService.getProfile());
-    setMetrics(AdmissionService.getReadinessMetrics());
-    setOutstandingTasks(AdmissionService.getOutstandingTasks());
-    setAppointments(AppointmentService.getCitizenAppointments());
-    setNotifications(Storage.getNotifications());
+  const loadDashboardData = async () => {
+    try {
+      const [p, m, t, a, n] = await Promise.all([
+        AdmissionService.getProfile(),
+        AdmissionService.getReadinessMetrics(),
+        AdmissionService.getOutstandingTasks(),
+        AppointmentService.getCitizenAppointments(),
+        notificationService.getNotifications()
+      ]);
+      if (p) setProfile(p);
+      if (m) setMetrics(m);
+      if (t) setOutstandingTasks(t);
+      if (a) setAppointments(a);
+      if (n) setNotifications(n);
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    }
   };
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!cancelModalApt) return;
-    AppointmentService.cancelAppointment(cancelModalApt.id, cancelReason);
+    await AppointmentService.cancelAppointment(cancelModalApt.id, cancelReason);
     setCancelModalApt(null);
-    loadDashboardData();
+    await loadDashboardData();
   };
 
   if (!metrics) {

@@ -1,13 +1,12 @@
 /**
- * CitizenQueue - Demonstration & Production Authentication Context
+ * CitizenQueue - Production Authentication Context
  * 
- * Provides frictionless role switching, session persistence, and role-based access control
- * for Students/Guardians (Citizen Platform) and School Administrators (Institution Desk).
+ * Provides real API session persistence, live JWT token handling,
+ * role-based access control, and seamless authentication state across
+ * Student (Candidate) and Institutional Administrator portals.
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AdmissionService } from '../services/admissionService';
-import { Storage } from '../services/storageService';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 import { ROLES } from '../utils/constants';
 
@@ -16,167 +15,193 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
   const [token, setToken] = useState(() => authService.getToken());
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [admissionData, setAdmissionData] = useState(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
-  // Keep local storage in sync
+  // Restore authenticated session from backend on initial mount
   useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem('cq_demo_user', JSON.stringify(currentUser));
+    let isMounted = true;
+
+    async function restoreSession() {
+      const activeToken = authService.getToken();
+      if (activeToken) {
+        try {
+          const res = await authService.getMe();
+          if (isMounted && res.success && res.data) {
+            setCurrentUser(res.data.user);
+            if (res.data.student) setStudentProfile(res.data.student);
+            if (res.data.admission) setAdmissionData(res.data.admission);
+          }
+        } catch (err) {
+          if (isMounted) {
+            setCurrentUser(null);
+            setToken(null);
+          }
+        }
       }
-    } catch (e) {
-      console.warn('Could not save demo user state', e);
+      if (isMounted) {
+        setIsLoadingSession(false);
+      }
     }
-  }, [currentUser]);
 
-  const loginAsCitizen = (userDataOrName) => {
-    let user;
-    if (typeof userDataOrName === 'object' && userDataOrName !== null) {
-      user = {
-        role: ROLES.STUDENT,
-        name: userDataOrName.name || userDataOrName.fullName || 'Emmanuel Mensah',
-        guardianName: userDataOrName.guardianName || 'Kwame Mensah',
-        email: userDataOrName.email || userDataOrName.guardianEmail || 'kwame.mensah@example.com',
-        phone: userDataOrName.phone || userDataOrName.guardianPhone || '+233 24 411 2233',
-        school: userDataOrName.school || userDataOrName.assignedSchool || 'Achimota Senior High School',
-        indexNumber: userDataOrName.indexNumber || userDataOrName.beceIndexNumber || '101245089',
-        programme: userDataOrName.programme || 'General Science',
-        residentialStatus: userDataOrName.residentialStatus || 'Boarding'
-      };
-    } else {
-      user = {
-        role: ROLES.STUDENT,
-        name: userDataOrName || 'Emmanuel Mensah',
-        guardianName: 'Kwame Mensah',
-        email: 'kwame.mensah@example.com',
-        phone: '+233 24 411 2233',
-        school: 'Achimota Senior High School',
-        indexNumber: '101245089',
-        programme: 'General Science',
-        residentialStatus: 'Boarding'
-      };
-    }
-    const mockToken = `demo_jwt_student_${Date.now()}`;
-    authService.setToken(mockToken);
-    setToken(mockToken);
-    setCurrentUser(user);
-  };
+    restoreSession();
 
-  const loginAsAdmin = (officerDataOrInstName) => {
-    let user;
-    if (typeof officerDataOrInstName === 'object' && officerDataOrInstName !== null) {
-      user = {
-        role: ROLES.ADMIN,
-        name: officerDataOrInstName.name || officerDataOrInstName.fullName || 'Admissions Officer Addo',
-        fullName: officerDataOrInstName.fullName || officerDataOrInstName.name || 'Admissions Officer Addo',
-        title: officerDataOrInstName.title || 'Mr.',
-        designation: officerDataOrInstName.designation || 'Admissions Officer',
-        staffId: officerDataOrInstName.staffId || 'GES-482910',
-        phone: officerDataOrInstName.phone || '+233 24 000 1122',
-        email: officerDataOrInstName.email || 'admissions-desk@achimota.edu.gh',
-        institutionId: officerDataOrInstName.institutionId || 'inst-1',
-        institutionName: officerDataOrInstName.institutionName || officerDataOrInstName.schoolName || 'Achimota Senior High School',
-        department: officerDataOrInstName.department || 'Admissions Directorate'
-      };
-    } else {
-      user = {
-        role: ROLES.ADMIN,
-        name: 'Admissions Officer Addo',
-        fullName: 'Admissions Officer Addo',
-        title: 'Mr.',
-        designation: 'Admissions Officer',
-        staffId: 'GES-482910',
-        phone: '+233 24 000 1122',
-        email: 'admissions-desk@achimota.edu.gh',
-        institutionId: 'inst-1',
-        institutionName: officerDataOrInstName || 'Achimota Senior High School',
-        department: 'Admissions Directorate'
-      };
-    }
-    const mockToken = `demo_jwt_admin_${Date.now()}`;
-    authService.setToken(mockToken);
-    setToken(mockToken);
-    setCurrentUser(user);
-  };
-
-  const registerStaff = (staffData) => {
-    // 1. Persist staff in storage list
-    const currentStaffList = Storage.getStaffProfiles();
-    const formattedName = `${staffData.title ? staffData.title + ' ' : ''}${staffData.fullName}`.trim();
-    const newStaffEntry = {
-      id: `staff-${Date.now()}`,
-      name: formattedName,
-      fullName: staffData.fullName,
-      title: staffData.title || 'Mr.',
-      staffId: staffData.staffId || `GES-${Math.floor(100000 + Math.random() * 900000)}`,
-      email: staffData.email,
-      phone: staffData.phone,
-      schoolName: staffData.schoolName || 'Achimota Senior High School',
-      institutionName: staffData.schoolName || 'Achimota Senior High School',
-      institutionId: staffData.institutionId || 'inst-1',
-      designation: staffData.designation || 'Admissions Officer',
-      department: staffData.department || 'Admissions Directorate',
-      registeredAt: new Date().toISOString()
+    // Listen for 401 session expiration from apiClient
+    const handleSessionExpired = () => {
+      setCurrentUser(null);
+      setToken(null);
+      setStudentProfile(null);
+      setAdmissionData(null);
     };
 
-    const existingIdx = currentStaffList.findIndex(
-      (s) => (s.email && s.email.toLowerCase() === staffData.email.toLowerCase()) || s.staffId === staffData.staffId
-    );
-    if (existingIdx !== -1) {
-      currentStaffList[existingIdx] = { ...currentStaffList[existingIdx], ...newStaffEntry };
-    } else {
-      currentStaffList.unshift(newStaffEntry);
+    window.addEventListener('cq:session_expired', handleSessionExpired);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('cq:session_expired', handleSessionExpired);
+    };
+  }, []);
+
+  /**
+   * Authenticate student/citizen with index number or email and password
+   */
+  const loginAsCitizen = async (credentials) => {
+    // If called with specific credentials or fallback to demo account
+    const identifier =
+      credentials?.beceIndexNumber ||
+      credentials?.indexNumber ||
+      credentials?.email ||
+      credentials?.identifier ||
+      '101245089';
+
+    const password = credentials?.password || credentials?.pin || 'Password123!';
+
+    const res = await authService.login({ identifier, password });
+    if (res.success) {
+      setCurrentUser(res.user);
+      setToken(res.token);
+      if (res.student) setStudentProfile(res.student);
+      if (res.admission) setAdmissionData(res.admission);
     }
-    Storage.setStaffProfiles(currentStaffList);
-
-    // 2. Log in directly as admin with these credentials
-    loginAsAdmin(newStaffEntry);
-    return newStaffEntry;
+    return res;
   };
 
-  const registerCandidate = (candidateData) => {
-    // 1. Update admission service store
-    const registeredProfile = AdmissionService.registerStudent(candidateData);
+  /**
+   * Authenticate institutional administrator with official email and password
+   */
+  const loginAsAdmin = async (credentials) => {
+    const identifier =
+      credentials?.email ||
+      credentials?.identifier ||
+      'admin@achimota.edu.gh';
 
-    // 2. Set current auth session to this student
-    loginAsCitizen(registeredProfile);
-    return registeredProfile;
+    const password = credentials?.password || 'Password123!';
+
+    const res = await authService.login({ identifier, password });
+    if (res.success) {
+      setCurrentUser(res.user);
+      setToken(res.token);
+    }
+    return res;
   };
 
-  const logout = () => {
-    authService.setToken(null);
+  /**
+   * Register a new candidate
+   */
+  const registerCandidate = async (candidateData) => {
+    const res = await authService.register(candidateData);
+    if (res.success) {
+      setCurrentUser(res.user);
+      setToken(res.token);
+      if (res.student) setStudentProfile(res.student);
+      if (res.admission) setAdmissionData(res.admission);
+    }
+    return res;
+  };
+
+  /**
+   * Register a new institutional administrator / staff member
+   */
+  const registerStaff = async (staffData) => {
+    const res = await authService.registerAdmin(staffData);
+    if (res.success) {
+      setCurrentUser(res.user);
+      setToken(res.token);
+    }
+    return res;
+  };
+
+  /**
+   * Terminate active session
+   */
+  const logout = async () => {
+    await authService.logout();
+    setCurrentUser(null);
     setToken(null);
-    setCurrentUser({
-      role: ROLES.GUEST,
-      name: 'Guest Visitor',
-      email: '',
-      phone: ''
-    });
+    setStudentProfile(null);
+    setAdmissionData(null);
   };
 
-  const hasRole = (role) => {
-    if (!currentUser) return false;
-    if (role === 'student' || role === 'citizen') {
-      return currentUser.role === ROLES.STUDENT;
-    }
-    return currentUser.role === role;
-  };
+  const hasRole = useCallback(
+    (role) => {
+      if (!currentUser) return false;
+      if (role === 'student' || role === 'citizen') {
+        return currentUser.role === 'student' || currentUser.role === 'citizen';
+      }
+      if (role === 'admin') {
+        return [
+          'admin',
+          'school_admin',
+          'academic_officer',
+          'finance_officer',
+          'library_officer',
+          'collection_officer',
+          'super_admin'
+        ].includes(currentUser.role);
+      }
+      return currentUser.role === role;
+    },
+    [currentUser]
+  );
+
+  const isStudent = Boolean(
+    currentUser && (currentUser.role === 'student' || currentUser.role === 'citizen')
+  );
+
+  const isAdmin = Boolean(
+    currentUser &&
+      [
+        'admin',
+        'school_admin',
+        'academic_officer',
+        'finance_officer',
+        'library_officer',
+        'collection_officer',
+        'super_admin'
+      ].includes(currentUser.role)
+  );
+
+  const isAuthenticated = Boolean(currentUser && currentUser.role !== 'guest');
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
         token,
+        studentProfile,
+        admissionData,
+        isLoadingSession,
         loginAsCitizen,
         loginAsAdmin,
         registerCandidate,
         registerStaff,
         logout,
         hasRole,
-        isStudent: currentUser?.role === ROLES.STUDENT,
-        isCitizen: currentUser?.role === ROLES.STUDENT,
-        isAdmin: currentUser?.role === ROLES.ADMIN,
-        isGuest: currentUser?.role === ROLES.GUEST,
-        isAuthenticated: currentUser?.role === ROLES.STUDENT || currentUser?.role === ROLES.ADMIN
+        isStudent,
+        isCitizen: isStudent,
+        isAdmin,
+        isGuest: !isAuthenticated,
+        isAuthenticated
       }}
     >
       {children}
@@ -191,3 +216,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

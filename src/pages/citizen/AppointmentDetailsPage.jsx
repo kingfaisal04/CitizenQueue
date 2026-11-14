@@ -38,9 +38,13 @@ export default function AppointmentDetailsPage() {
   const [appointment, setAppointment] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const loadAppointment = () => {
-    const apt = AppointmentService.getById(appointmentId);
-    setAppointment(apt);
+  const loadAppointment = async () => {
+    try {
+      const apt = await AppointmentService.getById(appointmentId);
+      if (apt) setAppointment(apt);
+    } catch (err) {
+      console.error('Failed to load appointment details:', err);
+    }
   };
 
   useEffect(() => {
@@ -48,17 +52,20 @@ export default function AppointmentDetailsPage() {
   }, [appointmentId]);
 
   // Handle toggling document checklist item by visitor
-  const handleToggleChecklist = (itemId) => {
-    const updated = AppointmentService.toggleChecklistItem(appointment.id, itemId);
+  const handleToggleChecklist = async (itemId) => {
+    if (!appointment) return;
+    const currentStatus = appointment.reportingChecklist?.[itemId]?.verified;
+    const updated = await AppointmentService.toggleChecklistItem(appointment._id || appointment.id, itemId, !currentStatus);
     if (updated) {
       setAppointment({ ...updated });
     }
   };
 
-  const handleCancel = () => {
-    AppointmentService.cancelAppointment(appointment.id, 'Cancelled via appointment pass');
+  const handleCancel = async () => {
+    if (!appointment) return;
+    await AppointmentService.cancelAppointment(appointment._id || appointment.id, 'Cancelled via appointment pass');
     setShowCancelModal(false);
-    loadAppointment();
+    await loadAppointment();
   };
 
   if (!appointment) {

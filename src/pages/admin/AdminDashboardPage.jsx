@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { AdmissionService } from '../../services/admissionService';
 import { AppointmentService } from '../../services/appointmentService';
-import { Storage } from '../../services/storageService';
+import { ServiceService } from '../../services/serviceService';
 import StatusBadge from '../../components/common/StatusBadge';
 
 export default function AdminDashboardPage() {
@@ -31,11 +31,21 @@ export default function AdminDashboardPage() {
   const [appointments, setAppointments] = useState([]);
   const [availability, setAvailability] = useState({});
 
-  const loadAllData = () => {
-    setStudents(AdmissionService.getAdmittedStudents());
-    setDocuments(AdmissionService.getDocuments());
-    setAppointments(AppointmentService.getAll());
-    setAvailability(Storage.getAvailability());
+  const loadAllData = async () => {
+    try {
+      const [stu, docs, apts, avail] = await Promise.all([
+        AdmissionService.getAdmittedStudents(),
+        AdmissionService.getDocuments(),
+        AppointmentService.getAll(),
+        ServiceService.getAvailability('srv-101')
+      ]);
+      if (Array.isArray(stu)) setStudents(stu);
+      if (Array.isArray(docs)) setDocuments(docs);
+      if (Array.isArray(apts)) setAppointments(apts);
+      if (Array.isArray(avail)) setAvailability({ 'srv-101': avail });
+    } catch (err) {
+      console.error('Failed to load admin dashboard:', err);
+    }
   };
 
   useEffect(() => {
