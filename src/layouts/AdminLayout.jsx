@@ -68,8 +68,8 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900 font-sans antialiased">
       
-      {/* 1. Official Civic Top Bar */}
-      <div className="bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-900">
+      {/* 1. Official Civic Top Bar (Hidden on mobile devices) */}
+      <div className="hidden sm:block bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-900">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 truncate">
             <span className="flex h-2 w-2 relative shrink-0">

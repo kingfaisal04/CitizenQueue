@@ -448,7 +448,7 @@ export default function RegisterPage() {
               className="w-full py-3.5 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
             >
               <UserPlus size={16} />
-              <span>Complete Registration & Open Command Centre</span>
+              <span>Complete Registration!</span>
             </button>
           </form>
         </div>

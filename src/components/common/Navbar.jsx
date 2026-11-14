@@ -23,6 +23,7 @@ import {
   LogIn,
   UserPlus,
   ChevronDown,
+  ChevronRight,
   LogOut,
   Phone,
   CheckCircle2
@@ -33,7 +34,9 @@ import { AdmissionService } from '../../services/admissionService';
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [publicMenuOpen, setPublicMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const publicDropdownRef = useRef(null);
 
   const location = useLocation();
   const { currentUser, isAdmin, isAuthenticated, logout, loginAsAdmin, loginAsCitizen } = useAuth();
@@ -42,21 +45,42 @@ export default function Navbar() {
   const profile = isAuthenticated ? AdmissionService.getProfile() : null;
   const metrics = isAuthenticated ? AdmissionService.getReadinessMetrics() : null;
 
-  // Close dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setUserMenuOpen(false);
       }
+      if (publicDropdownRef.current && !publicDropdownRef.current.contains(event.target)) {
+        setPublicMenuOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
-  // Close mobile menu on route change
+  // Close menus on Escape key
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setUserMenuOpen(false);
+        setMobileMenuOpen(false);
+        setPublicMenuOpen(false);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Close mobile and public menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
+    setPublicMenuOpen(false);
   }, [location.pathname]);
 
   const isActive = (path) => {
@@ -77,8 +101,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full transition-all">
       
-      {/* 1. Official Civic Institutional Top Bar */}
-      <div className="bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-850">
+      {/* 1. Official Civic Institutional Top Bar (Hidden on mobile devices) */}
+      <div className="hidden sm:block bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-850">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
           {/* Left: Official GES and Republic of Ghana Notice */}
@@ -127,7 +151,7 @@ export default function Navbar() {
                     SHS ADMISSIONS
                   </span> */}
                 </div>
-                <p className="text-[11px] font-medium text-slate-500 -mt-0.5 hidden sm:block">
+                <p className="text-[11px] font-medium text-slate-500 -mt-0.5 hidden md:block">
                   Pre-Arrival Verification & Capacity Orchestration
                 </p>
               </div>
@@ -308,30 +332,157 @@ export default function Navbar() {
                   </div>
                 </div>
               ) : (
-                /* Public Actions: STRICTLY Candidate Sign In & Candidate Sign Up (Hidden on mobile devices) */
-                <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
+                /* Public Actions: Desktop Direct Buttons + Mobile Three Horizontal Button with Responsive Dropdown */
+                <div className="flex items-center gap-2">
                   
-                  {/* Candidate Sign In */}
-                  <Link
-                    to="/login"
-                    className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
-                      isActive('/login') || isActive('/signin')
-                        ? 'bg-slate-100 text-cqNavy-950 font-bold border border-slate-200 shadow-2xs'
-                        : 'text-slate-700 hover:text-cqNavy-950 hover:bg-slate-50 border border-slate-200'
-                    }`}
-                  >
-                    <LogIn size={13} className="text-slate-500" />
-                    <span>Candidate Sign In</span>
-                  </Link>
+                  {/* Desktop Only Actions (sm: and larger) */}
+                  <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
+                    {/* Candidate Sign In */}
+                    <Link
+                      to="/login"
+                      className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                        isActive('/login') || isActive('/signin')
+                          ? 'bg-slate-100 text-cqNavy-950 font-bold border border-slate-200 shadow-2xs'
+                          : 'text-slate-700 hover:text-cqNavy-950 hover:bg-slate-50 border border-slate-200'
+                      }`}
+                    >
+                      <LogIn size={13} className="text-slate-500" />
+                      <span>Candidate Sign In</span>
+                    </Link>
 
-                  {/* Candidate Sign Up */}
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-xs bg-cqNavy-950 hover:bg-cqNavy-900 text-white hover:shadow-md"
-                  >
-                    <UserPlus size={13} className="text-cqTeal-400" />
-                    <span>Candidate Sign Up</span>
-                  </Link>
+                    {/* Candidate Sign Up */}
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-xs bg-cqNavy-950 hover:bg-cqNavy-900 text-white hover:shadow-md"
+                    >
+                      <UserPlus size={13} className="text-cqTeal-400" />
+                      <span>Candidate Sign Up</span>
+                    </Link>
+                  </div>
+
+                  {/* Mobile Three Horizontal Button & Dropdown Menu (Mobile devices) */}
+                  <div className="relative sm:hidden" ref={publicDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setPublicMenuOpen(!publicMenuOpen)}
+                      className={`inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cqTeal-500/30 ${
+                        publicMenuOpen
+                          ? 'bg-slate-100 text-cqNavy-950 border-slate-300 shadow-inner ring-1 ring-slate-300'
+                          : 'bg-white text-slate-700 hover:text-cqNavy-950 hover:bg-slate-50 border-slate-200/90 shadow-2xs active:scale-95'
+                      }`}
+                      aria-expanded={publicMenuOpen}
+                      aria-label="Toggle admission portal options menu"
+                    >
+                      {publicMenuOpen ? (
+                        <X size={20} className="text-cqNavy-950 transition-transform duration-200" />
+                      ) : (
+                        <Menu size={20} className="text-cqNavy-950 transition-transform duration-200" />
+                      )}
+                    </button>
+
+                    {/* Mobile Dropdown Displaying Sign Up and Sign In */}
+                    {publicMenuOpen && (
+                      <div className="absolute right-0 top-full mt-2.5 w-[calc(100vw-2rem)] max-w-[310px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 z-50 animate-fade-in divide-y divide-slate-100">
+                        
+                        {/* Dropdown Header Context */}
+                        <div className="pb-3 px-1">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-cqTeal-700 bg-cqTeal-50 border border-cqTeal-200/60 px-2 py-0.5 rounded-md">
+                              SHS Admissions
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-400">
+                              GES Portal
+                            </span>
+                          </div>
+                          <p className="text-xs font-extrabold text-cqNavy-950">
+                            Candidate Portal Access
+                          </p>
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                            Verify school placement, digital prospectus, and reporting schedule.
+                          </p>
+                        </div>
+
+                        {/* Sign Up & Sign In Navigation Options */}
+                        <div className="py-2.5 space-y-2">
+                          
+                          {/* 1. Candidate Sign Up */}
+                          <Link
+                            to="/register"
+                            onClick={() => setPublicMenuOpen(false)}
+                            className="group flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white shadow-sm hover:shadow-md hover:from-cqNavy-900 hover:to-cqNavy-850 active:scale-[0.98] transition-all border border-cqNavy-850"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-white/10 text-cqTeal-300 flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-105 transition-transform">
+                                <UserPlus size={16} className="text-cqTeal-400" />
+                              </div>
+                              <div className="text-left truncate">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-white tracking-tight truncate">
+                                    Candidate Sign Up
+                                  </span>
+                                  <span className="text-[9px] font-extrabold uppercase tracking-wider bg-cqTeal-500/20 text-cqTeal-300 border border-cqTeal-400/30 px-1 py-0.2 rounded shrink-0">
+                                    Register
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-300 leading-tight truncate">
+                                  Create student account with BECE index
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight size={15} className="text-cqTeal-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1.5" />
+                          </Link>
+
+                          {/* 2. Candidate Sign In */}
+                          <Link
+                            to="/login"
+                            onClick={() => setPublicMenuOpen(false)}
+                            className={`group flex items-center justify-between p-2.5 rounded-xl transition-all border active:scale-[0.98] ${
+                              isActive('/login') || isActive('/signin')
+                                ? 'bg-slate-100 text-cqNavy-950 border-slate-300 font-bold shadow-2xs'
+                                : 'bg-slate-50 hover:bg-slate-100/90 text-slate-800 border-slate-200/80 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-white text-slate-700 flex items-center justify-center shrink-0 border border-slate-200 group-hover:scale-105 transition-transform shadow-2xs">
+                                <LogIn size={16} className="text-cqNavy-900" />
+                              </div>
+                              <div className="text-left truncate">
+                                <span className="text-xs font-bold text-slate-900 tracking-tight block truncate">
+                                  Candidate Sign In
+                                </span>
+                                <p className="text-[10px] text-slate-500 leading-tight truncate">
+                                  Log in to existing admission profile
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight size={15} className="text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1.5" />
+                          </Link>
+
+                        </div>
+
+                        {/* Reassurance & Civic Compliance Footer */}
+                        <div className="pt-2 px-1 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-slate-500">
+                            <span className="flex items-center gap-1 text-emerald-600 font-semibold truncate">
+                              <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+                              Zero Intermediary Fees
+                            </span>
+                            <span className="text-slate-400 text-[9px] font-medium shrink-0">Republic of Ghana</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500">
+                            <span className="flex items-center gap-1 text-slate-600 truncate">
+                              <Phone size={10} className="text-cqTeal-600 shrink-0" />
+                              Toll-Free: 030 274 0000
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-mono shrink-0">
+                              GES Pre-Arrival
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+                  </div>
 
                 </div>
               )}

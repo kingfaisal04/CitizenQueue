@@ -62,8 +62,8 @@ export default function StudentLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900 antialiased">
       
-      {/* 1. Official Pre-Arrival Policy Top Notice */}
-      <div className="bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-800">
+      {/* 1. Official Pre-Arrival Policy Top Notice (Hidden on mobile devices) */}
+      <div className="hidden sm:block bg-gradient-to-r from-cqNavy-950 via-cqNavy-900 to-cqNavy-950 text-white text-[11px] py-1.5 px-4 border-b border-cqNavy-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 truncate">
             <span className="flex h-2 w-2 relative shrink-0">
