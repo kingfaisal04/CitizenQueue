@@ -92,6 +92,21 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    resetPasswordOtp: {
+      type: String,
+      default: null,
+      select: false
+    },
+    resetPasswordOtpExpires: {
+      type: Date,
+      default: null,
+      select: false
+    },
+    resetPasswordChannel: {
+      type: String,
+      enum: ['email', 'phone', null],
+      default: null
+    },
     refreshTokens: [RefreshTokenSchema],
     lastLoginAt: {
       type: Date,
@@ -103,6 +118,8 @@ const UserSchema = new mongoose.Schema(
     toJSON: {
       transform: (doc, ret) => {
         delete ret.password;
+        delete ret.resetPasswordOtp;
+        delete ret.resetPasswordOtpExpires;
         delete ret.refreshTokens;
         return ret;
       }
@@ -110,6 +127,8 @@ const UserSchema = new mongoose.Schema(
     toObject: {
       transform: (doc, ret) => {
         delete ret.password;
+        delete ret.resetPasswordOtp;
+        delete ret.resetPasswordOtpExpires;
         delete ret.refreshTokens;
         return ret;
       }

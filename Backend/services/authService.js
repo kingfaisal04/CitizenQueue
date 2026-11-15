@@ -1,4 +1,5 @@
 import { User, Student, School, Admission, AuditLog } from '../models/index.js';
+import { EmailService } from './emailService.js';
 import { ApiError } from '../utils/ApiError.js';
 import {
   generateAccessToken,
@@ -401,6 +402,219 @@ export class AuthService {
       user: userObj,
       student: student ? student.toObject() : null,
       admission: admission ? admission.toObject() : null,
+    };
+  }
+
+  /**
+   * Helper: Resolve user by flexible identifier (email, phone, BECE index number)
+   */
+  static async findUserByIdentifier(rawIdentifier) {
+    if (!rawIdentifier) return { user: null, student: null };
+    const identifier = rawIdentifier.trim();
+    const digitsOnly = identifier.replace(/\D/g, '');
+
+    // 1. Direct search by email or phone
+    let user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { phone: identifier },
+      ],
+    });
+
+    // 2. Search by phone digits if phone has country code or whitespace
+    if (!user && digitsOnly.length >= 7) {
+      user = await User.findOne({
+        phone: { $regex: digitsOnly.slice(-9) },
+      });
+    }
+
+    // 3. Search via Student by beceIndexNumber or guardian phone/email
+    let student = null;
+    if (!user) {
+      student = await Student.findOne({
+        $or: [
+          { beceIndexNumber: identifier },
+          { guardianPhone: identifier },
+          { guardianEmail: identifier.toLowerCase() },
+        ],
+      });
+
+      if (!student && digitsOnly.length >= 7) {
+        student = await Student.findOne({
+          guardianPhone: { $regex: digitsOnly.slice(-9) },
+        });
+      }
+
+      if (student && student.user) {
+        user = await User.findById(student.user);
+      }
+    } else {
+      student = await Student.findOne({ user: user._id });
+    }
+
+    return { user, student };
+  }
+
+  /**
+   * Request password reset OTP via email or phone
+   */
+  static async requestPasswordReset(identifier, preferredChannel = 'email', ipAddress = null, userAgent = null) {
+    const { user, student } = await this.findUserByIdentifier(identifier);
+
+    if (!user) {
+      throw ApiError.notFound('No account associated with that BECE Index, email, or phone number was found.');
+    }
+
+    // Determine destination based on channel
+    let channel = preferredChannel === 'phone' ? 'phone' : 'email';
+    let destination = null;
+
+    if (channel === 'phone') {
+      destination = user.phone || student?.guardianPhone;
+      if (!destination && (user.email || student?.guardianEmail)) {
+        // Fallback to email if phone not on file
+        channel = 'email';
+        destination = user.email || student?.guardianEmail;
+      }
+    } else {
+      destination = user.email || student?.guardianEmail;
+      if (!destination && (user.phone || student?.guardianPhone)) {
+        // Fallback to phone if email not on file
+        channel = 'phone';
+        destination = user.phone || student?.guardianPhone;
+      }
+    }
+
+    if (!destination) {
+      throw ApiError.badRequest('No valid contact channel found on file for this account. Please contact school administration.');
+    }
+
+    // Generate 6-digit cryptographically random OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP to user record
+    const userDoc = await User.findById(user._id);
+    userDoc.resetPasswordOtp = otp;
+    userDoc.resetPasswordOtpExpires = expiresAt;
+    userDoc.resetPasswordChannel = channel;
+    await userDoc.save();
+
+    // Dispatch via EmailService
+    await EmailService.sendPasswordResetOtp(destination, otp, channel, user.name);
+
+    // Audit log
+    await AuditLog.create({
+      user: user._id,
+      userName: user.name,
+      userRole: user.role,
+      schoolId: user.schoolId,
+      action: 'PASSWORD_RESET_REQUESTED',
+      targetResource: 'User',
+      targetId: user._id.toString(),
+      details: { channel, destination: destination.replace(/^(.{2})(.*)(.{2})$/, '$1***$3') },
+      ipAddress,
+      userAgent,
+    });
+
+    // Mask destination for user privacy
+    let maskedDestination = destination;
+    if (channel === 'email' || destination.includes('@')) {
+      const [local, domain] = destination.split('@');
+      maskedDestination = `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+    } else {
+      const clean = destination.trim();
+      maskedDestination = clean.length > 6 ? `${clean.slice(0, 4)} *** ${clean.slice(-4)}` : '***';
+    }
+
+    return {
+      message: `A 6-digit verification code has been sent to your ${channel} (${maskedDestination}).`,
+      destination: maskedDestination,
+      channel,
+      expiresInMinutes: 10,
+      devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+    };
+  }
+
+  /**
+   * Verify password reset OTP code
+   */
+  static async verifyResetOtp(identifier, otp) {
+    const { user } = await this.findUserByIdentifier(identifier);
+    if (!user) {
+      throw ApiError.notFound('Account not found.');
+    }
+
+    const userWithOtp = await User.findById(user._id).select('+resetPasswordOtp +resetPasswordOtpExpires');
+    if (!userWithOtp || !userWithOtp.resetPasswordOtp || !userWithOtp.resetPasswordOtpExpires) {
+      throw ApiError.badRequest('No active password reset request found. Please request a new verification code.');
+    }
+
+    if (new Date() > userWithOtp.resetPasswordOtpExpires) {
+      throw ApiError.badRequest('Verification code has expired. Please request a fresh one.');
+    }
+
+    if (userWithOtp.resetPasswordOtp !== otp.trim()) {
+      throw ApiError.badRequest('Invalid verification code. Please check the 6-digit code and try again.');
+    }
+
+    return {
+      valid: true,
+      message: 'Verification code verified successfully.',
+    };
+  }
+
+  /**
+   * Reset password upon successful OTP verification
+   */
+  static async resetPasswordWithOtp(identifier, otp, newPassword, ipAddress = null, userAgent = null) {
+    const { user } = await this.findUserByIdentifier(identifier);
+    if (!user) {
+      throw ApiError.notFound('Account not found.');
+    }
+
+    const userWithOtp = await User.findById(user._id).select('+resetPasswordOtp +resetPasswordOtpExpires');
+    if (!userWithOtp || !userWithOtp.resetPasswordOtp || !userWithOtp.resetPasswordOtpExpires) {
+      throw ApiError.badRequest('No active password reset request found. Please request a new verification code.');
+    }
+
+    if (new Date() > userWithOtp.resetPasswordOtpExpires) {
+      throw ApiError.badRequest('Verification code has expired. Please request a fresh one.');
+    }
+
+    if (userWithOtp.resetPasswordOtp !== otp.trim()) {
+      throw ApiError.badRequest('Invalid verification code.');
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      throw ApiError.badRequest('New password must be at least 8 characters long.');
+    }
+
+    // Set new password (pre-save hook will hash it with bcrypt)
+    userWithOtp.password = newPassword;
+    userWithOtp.resetPasswordOtp = null;
+    userWithOtp.resetPasswordOtpExpires = null;
+    userWithOtp.resetPasswordChannel = null;
+    userWithOtp.refreshTokens = []; // Clear existing tokens for account security
+    await userWithOtp.save();
+
+    // Audit log
+    await AuditLog.create({
+      user: user._id,
+      userName: user.name,
+      userRole: user.role,
+      schoolId: user.schoolId,
+      action: 'PASSWORD_RESET_COMPLETED',
+      targetResource: 'User',
+      targetId: user._id.toString(),
+      details: { identifier },
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      success: true,
+      message: 'Your password has been reset successfully. You may now sign in with your new credentials.',
     };
   }
 }

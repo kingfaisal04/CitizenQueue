@@ -86,3 +86,32 @@ export const getMe = asyncHandler(async (req, res) => {
   const result = await AuthService.getMe(req.user._id);
   return ApiResponse.success(res, result);
 });
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { identifier, channel } = req.body;
+  const result = await AuthService.requestPasswordReset(
+    identifier,
+    channel,
+    req.ip,
+    req.headers['user-agent']
+  );
+  return ApiResponse.success(res, result);
+});
+
+export const verifyResetOtp = asyncHandler(async (req, res) => {
+  const { identifier, otp } = req.body;
+  const result = await AuthService.verifyResetOtp(identifier, otp);
+  return ApiResponse.success(res, result);
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { identifier, otp, newPassword } = req.body;
+  const result = await AuthService.resetPasswordWithOtp(
+    identifier,
+    otp,
+    newPassword,
+    req.ip,
+    req.headers['user-agent']
+  );
+  return ApiResponse.success(res, result);
+});

@@ -111,8 +111,13 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!formData.pin || formData.pin.length < 8) {
+      setFormError('Account password must be at least 8 characters long.');
+      return;
+    }
+
     if (formData.pin !== formData.confirmPin) {
-      setFormError('Access PIN and Confirm PIN do not match.');
+      setFormError('Account password and confirm password do not match.');
       return;
     }
 
@@ -413,23 +418,23 @@ export default function RegisterPage() {
               <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                 <Lock size={16} className="text-cqTeal-600" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  3. Account Access PIN
+                  3. Account Password
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">
-                    4-Digit Access PIN / Password
+                    Account Password (min. 8 characters)
                   </label>
                   <div className="relative">
                     <input
                       type={showPin ? 'text' : 'password'}
                       name="pin"
-                      placeholder="e.g. 2026"
+                      placeholder="Enter secure password"
                       value={formData.pin}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10 font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
                     />
                     <button
                       type="button"
@@ -443,15 +448,15 @@ export default function RegisterPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">
-                    Confirm PIN
+                    Confirm Password
                   </label>
                   <input
                     type={showPin ? 'text' : 'password'}
                     name="confirmPin"
-                    placeholder="e.g. 2026"
+                    placeholder="Re-enter password"
                     value={formData.confirmPin}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
                 </div>
               </div>

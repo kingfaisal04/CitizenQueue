@@ -6,6 +6,9 @@ import {
   refreshToken,
   logout,
   getMe,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { authLimiter } from '../middleware/rateLimitMiddleware.js';
@@ -14,6 +17,9 @@ import {
   studentRegisterSchema,
   adminRegisterSchema,
   loginSchema,
+  forgotPasswordSchema,
+  verifyOtpSchema,
+  resetPasswordSchema,
 } from '../validators/authValidators.js';
 
 const router = express.Router();
@@ -21,6 +27,9 @@ const router = express.Router();
 router.post('/register', authLimiter, validate(studentRegisterSchema), registerStudent);
 router.post('/register-admin', authLimiter, validate(adminRegisterSchema), registerAdmin);
 router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.post('/verify-reset-otp', authLimiter, validate(verifyOtpSchema), verifyResetOtp);
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 router.post('/refresh', refreshToken);
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getMe);

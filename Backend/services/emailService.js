@@ -26,4 +26,14 @@ export class EmailService {
     }
     return true;
   }
+
+  static async sendPasswordResetOtp(destination, otp, channel = 'email', userName = 'User') {
+    if (!destination) return;
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(
+        `[OTP_DISPATCH] Password Reset OTP [${otp}] dispatched to ${destination} via ${channel.toUpperCase()} for ${userName}`
+      );
+    }
+    return true;
+  }
 }

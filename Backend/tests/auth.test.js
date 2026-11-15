@@ -172,4 +172,99 @@ describe('Authentication & Authorization Suite', () => {
       expect(refreshRes.body.data.refreshToken).toBeDefined();
     });
   });
+
+  describe('Password Recovery & OTP Reset Flow', () => {
+    beforeEach(async () => {
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          fullName: 'Reset User',
+          email: 'reset.user@example.com',
+          password: 'OldPassword123!',
+          phoneNumber: '0245556677',
+          indexNumber: '1017778889',
+          schoolId: 'inst-1',
+        });
+    });
+
+    it('should dispatch a 6-digit OTP code to registered email', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({
+          identifier: 'reset.user@example.com',
+          channel: 'email',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.channel).toBe('email');
+      expect(res.body.data.destination).toBeDefined();
+      expect(res.body.data.expiresInMinutes).toBe(10);
+    });
+
+    it('should dispatch an OTP code by BECE index number to phone', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({
+          identifier: '1017778889',
+          channel: 'phone',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.channel).toBe('phone');
+    });
+
+    it('should reset password with valid OTP and enable sign in with new password', async () => {
+      const forgotRes = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({
+          identifier: 'reset.user@example.com',
+          channel: 'email',
+        });
+
+      const devOtp = forgotRes.body.data.devOtp;
+      expect(devOtp).toBeDefined();
+
+      // Verify OTP
+      const verifyRes = await request(app)
+        .post('/api/v1/auth/verify-reset-otp')
+        .send({
+          identifier: 'reset.user@example.com',
+          otp: devOtp,
+        });
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.data.valid).toBe(true);
+
+      // Reset password
+      const resetRes = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({
+          identifier: 'reset.user@example.com',
+          otp: devOtp,
+          newPassword: 'BrandNewPassword2026!',
+        });
+      expect(resetRes.status).toBe(200);
+      expect(resetRes.body.success).toBe(true);
+
+      // Verify login with new password succeeds
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          identifier: 'reset.user@example.com',
+          password: 'BrandNewPassword2026!',
+        });
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.success).toBe(true);
+
+      // Verify old password fails
+      const oldLoginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          identifier: 'reset.user@example.com',
+          password: 'OldPassword123!',
+        });
+      expect(oldLoginRes.status).toBe(401);
+    });
+  });
 });

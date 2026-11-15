@@ -42,3 +42,19 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
 });
+
+export const forgotPasswordSchema = z.object({
+  identifier: z.string().min(1, 'Email, phone number, or BECE index number is required').trim(),
+  channel: z.enum(['email', 'phone']).default('email'),
+});
+
+export const verifyOtpSchema = z.object({
+  identifier: z.string().min(1, 'Identifier is required').trim(),
+  otp: z.string().min(6, 'Valid 6-digit OTP code is required').max(6, 'OTP must be 6 digits').trim(),
+});
+
+export const resetPasswordSchema = z.object({
+  identifier: z.string().min(1, 'Identifier is required').trim(),
+  otp: z.string().min(6, 'Valid 6-digit OTP code is required').max(6, 'OTP must be 6 digits').trim(),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
+});

@@ -142,6 +142,21 @@ export function AuthProvider({ children }) {
     setAdmissionData(null);
   };
 
+  /**
+   * Password Reset Flow Helpers
+   */
+  const forgotPassword = async ({ identifier, channel }) => {
+    return await authService.forgotPassword({ identifier, channel });
+  };
+
+  const verifyResetOtp = async ({ identifier, otp }) => {
+    return await authService.verifyResetOtp({ identifier, otp });
+  };
+
+  const resetPassword = async ({ identifier, otp, newPassword }) => {
+    return await authService.resetPassword({ identifier, otp, newPassword });
+  };
+
   const hasRole = useCallback(
     (role) => {
       if (!currentUser) return false;
@@ -196,6 +211,9 @@ export function AuthProvider({ children }) {
         registerCandidate,
         registerStaff,
         logout,
+        forgotPassword,
+        verifyResetOtp,
+        resetPassword,
         hasRole,
         isStudent,
         isCitizen: isStudent,

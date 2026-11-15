@@ -153,6 +153,39 @@ export const authService = {
     setClientToken(null);
     authService.setCurrentUser(null);
     return { success: true, message: 'Logged out successfully' };
+  },
+
+  /**
+   * Request password reset OTP via email or phone
+   */
+  forgotPassword: async ({ identifier, channel = 'email' }) => {
+    return await apiClient.post(
+      '/auth/forgot-password',
+      { identifier, channel },
+      { requiresAuth: false }
+    );
+  },
+
+  /**
+   * Verify password reset OTP
+   */
+  verifyResetOtp: async ({ identifier, otp }) => {
+    return await apiClient.post(
+      '/auth/verify-reset-otp',
+      { identifier, otp },
+      { requiresAuth: false }
+    );
+  },
+
+  /**
+   * Complete password reset with OTP and new password
+   */
+  resetPassword: async ({ identifier, otp, newPassword }) => {
+    return await apiClient.post(
+      '/auth/reset-password',
+      { identifier, otp, newPassword },
+      { requiresAuth: false }
+    );
   }
 };
 
