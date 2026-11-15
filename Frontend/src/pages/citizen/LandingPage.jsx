@@ -7,7 +7,7 @@
  * Orchestration Platform for the Ghanaian educational system post-CSSPS placement.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CalendarCheck,
@@ -19,15 +19,52 @@ import {
   School,
   ShoppingBag,
   ChevronDown,
-  Search
+  Search,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { InstitutionService } from '../../services/institutionService';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { loginAsCitizen } = useAuth();
   const [indexQuery, setIndexQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
+
+  // Live System Analytics State (Computed from MongoDB Atlas database)
+  const [analytics, setAnalytics] = useState({
+    totalStudents: 0,
+    totalSchools: 0,
+    queueReductionRate: 80,
+    totalCapacity: 0,
+    verificationRate: 100,
+    isLive: false,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveAnalytics() {
+      try {
+        const data = await InstitutionService.getPublicAnalytics();
+        if (isMounted && data) {
+          setAnalytics({
+            totalStudents: data.totalStudents ?? 0,
+            totalSchools: data.totalSchools ?? 0,
+            queueReductionRate: data.queueReductionRate ?? 80,
+            totalCapacity: data.totalCapacity ?? 0,
+            verificationRate: data.verificationRate ?? 100,
+            isLive: true,
+          });
+        }
+      } catch (err) {
+        console.warn('System analytics fallback to default operational baselines:', err);
+      }
+    }
+    loadLiveAnalytics();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -183,23 +220,48 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Trust Metrics Bar */}
-          <div className="pt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto border-t border-cqNavy-800/80">
-            <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800">
-              <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">450K+</p>
-              <p className="text-xs text-slate-400 mt-1">CSSPS Placements Supported</p>
+          {/* Real-time System Analysis Bar */}
+          <div className="pt-10 max-w-4xl mx-auto border-t border-cqNavy-800/80 space-y-3">
+            <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-400">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-cqTeal-300 font-mono tracking-wide uppercase text-[10px]">
+                {analytics.isLive ? 'Live System Operational Analysis' : 'Operational System Metrics'}
+              </span>
             </div>
-            <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800">
-              <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">80%</p>
-              <p className="text-xs text-slate-400 mt-1">Arrival Queue Reduction</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800">
-              <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">100%</p>
-              <p className="text-xs text-slate-400 mt-1">Zero Priority Fees / Fair</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800">
-              <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">GES</p>
-              <p className="text-xs text-slate-400 mt-1">Standardized Guidelines</p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800 hover:border-cqTeal-500/30 transition-colors">
+                <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">
+                  {analytics.totalStudents > 0 ? analytics.totalStudents.toLocaleString() : '0'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Active Candidate Placements</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800 hover:border-cqTeal-500/30 transition-colors">
+                <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">
+                  {analytics.queueReductionRate}%
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Arrival Queue Reduction</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800 hover:border-cqTeal-500/30 transition-colors">
+                <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">
+                  {analytics.totalSchools > 0 ? analytics.totalSchools : '0'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Participating Institutions</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-cqNavy-900/60 border border-cqNavy-800 hover:border-cqTeal-500/30 transition-colors">
+                <p className="text-2xl sm:text-3xl font-black text-cqTeal-300">
+                  {analytics.totalCapacity > 0 ? `${(analytics.totalCapacity / 1000).toFixed(1)}K` : `${analytics.verificationRate}%`}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {analytics.totalCapacity > 0 ? 'Intake Slots Allocated' : 'Pre-Screened Clearance'}
+                </p>
+              </div>
             </div>
           </div>
         </div>

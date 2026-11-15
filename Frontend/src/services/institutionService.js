@@ -50,6 +50,17 @@ export const InstitutionService = {
       return school;
     }
     return null;
+  },
+
+  /**
+   * Fetch live system-wide analytics and performance metrics calculated dynamically
+   */
+  getPublicAnalytics: async () => {
+    const res = await apiClient.get('/schools/analytics/public');
+    if (res.success && res.data) {
+      return res.data;
+    }
+    return null;
   }
 };
 
