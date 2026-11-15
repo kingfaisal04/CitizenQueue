@@ -7,16 +7,24 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 export const getStudentProfile = asyncHandler(async (req, res) => {
   let student;
   if (['citizen', 'student'].includes(req.user.role)) {
-    student = await Student.findOne({ user: req.user._id }).populate('school');
+    student = await Student.findOne({ user: req.user._id }).populate('school').populate('user', 'email phone name');
   } else if (req.params.studentId) {
-    student = await Student.findById(req.params.studentId).populate('school');
+    student = await Student.findById(req.params.studentId).populate('school').populate('user', 'email phone name');
   }
 
   if (!student) {
     throw ApiError.notFound('Student profile not found');
   }
 
-  return ApiResponse.success(res, student);
+  const studentObj = student.toObject();
+  if (!studentObj.phone && student.user?.phone) {
+    studentObj.phone = student.user.phone;
+  }
+  if (!studentObj.email && student.user?.email && !student.user.email.endsWith('@citizenqueue.gov.gh')) {
+    studentObj.email = student.user.email;
+  }
+
+  return ApiResponse.success(res, studentObj);
 });
 
 export const updateStudentProfile = asyncHandler(async (req, res) => {

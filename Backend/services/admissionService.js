@@ -1,4 +1,4 @@
-import { Admission, Student, Document, Prospectus, Appointment } from '../models/index.js';
+import { Admission, Student, Document, Prospectus, Appointment, User } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export class AdmissionService {
@@ -216,6 +216,8 @@ export class AdmissionService {
 
     // Update allowed fields
     const allowedFields = [
+      'phone',
+      'email',
       'gender',
       'dateOfBirth',
       'programme',
@@ -234,6 +236,14 @@ export class AdmissionService {
         student[field] = updateData[field];
       }
     });
+
+    // Synchronize client direct contact phone & email to account for OTP recovery
+    if (updateData.phone || updateData.email) {
+      const userUpdate = {};
+      if (updateData.phone) userUpdate.phone = updateData.phone.trim();
+      if (updateData.email) userUpdate.email = updateData.email.toLowerCase().trim();
+      await User.findByIdAndUpdate(student.user, userUpdate);
+    }
 
     student.isComplete = Boolean(
       student.fullName &&

@@ -19,7 +19,11 @@ import {
   Upload,
   Trash2,
   Shield,
-  ArrowRight
+  ArrowRight,
+  Phone,
+  Mail,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { AdmissionService } from '../../services/admissionService';
 import StageNavigation from '../../components/common/StageNavigation';
@@ -110,6 +114,8 @@ export default function AdmissionProfilePage() {
   const requiredFields = [
     formData.fullName,
     formData.beceIndexNumber,
+    formData.phone,
+    formData.email,
     formData.dateOfBirth,
     formData.gender,
     formData.assignedSchool,
@@ -457,7 +463,74 @@ export default function AdmissionProfilePage() {
           </div>
         </div>
 
-        {/* Section 3: Parent / Guardian Details */}
+        {/* Section 3: Student / Candidate Direct Contact Details (Phone & Email) */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cqTeal-50 text-cqTeal-700 flex items-center justify-center shrink-0">
+                <Phone size={20} />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-cqNavy-950">Candidate Direct Contact & Account Recovery</h2>
+                <p className="text-xs text-slate-500">Your direct personal phone and email linked to your account for OTP verification & notices</p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cqTeal-50 text-cqTeal-700 border border-cqTeal-200 self-start sm:self-auto shrink-0 flex items-center gap-1">
+              <KeyRound size={12} />
+              <span>OTP Linked</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Phone size={13} className="text-cqTeal-600" />
+                <span>Candidate Mobile Phone Number *</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                required
+                value={formData.phone || ''}
+                onChange={handleChange}
+                placeholder="e.g. +233 24 123 4567 or 0241234567"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
+              />
+              <p className="text-[11px] text-slate-400">
+                Used to receive 6-digit OTP verification codes via SMS when recovering your password.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Mail size={13} className="text-cqTeal-600" />
+                <span>Candidate Personal Email Address *</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                required
+                value={formData.email || ''}
+                onChange={handleChange}
+                placeholder="e.g. student@example.com"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
+              />
+              <p className="text-[11px] text-slate-400">
+                Used for account sign in, admission clearance updates, and email OTP password recovery.
+              </p>
+            </div>
+          </div>
+
+          {/* Account Security Notice */}
+          <div className="p-3.5 bg-cqTeal-50/50 rounded-2xl border border-cqTeal-100 flex items-start gap-2.5 text-xs text-cqNavy-900">
+            <ShieldCheck size={16} className="text-cqTeal-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <strong>Account Recovery Integration:</strong> When you click <em>"Forgot Password"</em> on the sign-in page, you can enter either this phone number or email address to receive your instant 6-digit confirmation OTP.
+            </p>
+          </div>
+        </div>
+
+        {/* Section 4: Parent / Guardian Details */}
         <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-cqNavy-50 text-cqNavy-900 flex items-center justify-center">

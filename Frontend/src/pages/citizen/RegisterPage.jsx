@@ -8,7 +8,7 @@
  * generate their Admission Command Centre profile with 1-click test fill support.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   School,
@@ -25,9 +25,47 @@ import {
   Eye,
   EyeOff,
   FileCheck2,
-  Calendar
+  Calendar,
+  Search,
+  X,
+  Check,
+  ChevronDown,
+  MapPin,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { InstitutionService } from '../../services/institutionService';
+
+// Fallback catalog of Ghanaian Senior High Schools (Category A & B)
+const FALLBACK_SCHOOLS = [
+  { id: 'inst-1', schoolId: 'inst-1', name: 'Achimota Senior High School', shortName: 'Achimota', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-2', schoolId: 'inst-2', name: 'Prempeh College', shortName: 'Prempeh', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-3', schoolId: 'inst-3', name: 'Tamale Senior High School', shortName: 'Tamasco', region: 'Northern', town: 'Tamale', category: 'Category A' },
+  { id: 'inst-4', schoolId: 'inst-4', name: 'Presbyterian Boys\' Secondary School (PRESEC Legon)', shortName: 'PRESEC Legon', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-5', schoolId: 'inst-5', name: 'Mfantsipim School', shortName: 'Kwabotwe', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-6', schoolId: 'inst-6', name: 'Wesley Girls\' High School', shortName: 'Wey Gey Hey', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-7', schoolId: 'inst-7', name: 'Opoku Ware School', shortName: 'OWASS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-8', schoolId: 'inst-8', name: 'Adisadel College', shortName: 'Adisco', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-9', schoolId: 'inst-9', name: 'St. Augustine\'s College', shortName: 'Augusco', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-10', schoolId: 'inst-10', name: 'Accra Academy', shortName: 'Bleoo', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-11', schoolId: 'inst-11', name: 'Holy Child School', shortName: 'Holico', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-12', schoolId: 'inst-12', name: 'St. Peter\'s Senior High School (PERSCO)', shortName: 'PERSCO', region: 'Eastern', town: 'Nkwatia', category: 'Category A' },
+  { id: 'inst-13', schoolId: 'inst-13', name: 'Aburi Girls\' Senior High School', shortName: 'ABUGISS', region: 'Eastern', town: 'Aburi', category: 'Category A' },
+  { id: 'inst-14', schoolId: 'inst-14', name: 'St. Louis Senior High School', shortName: 'St. Louis', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-15', schoolId: 'inst-15', name: 'Kumasi High School', shortName: 'KUHIS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-16', schoolId: 'inst-16', name: 'Yaa Asantewaa Girls\' Senior High School', shortName: 'YAGSHS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-17', schoolId: 'inst-17', name: 'Pope John Senior High School and Minor Seminary', shortName: 'POJOSS', region: 'Eastern', town: 'Koforidua', category: 'Category A' },
+  { id: 'inst-18', schoolId: 'inst-18', name: 'Ghana National College', shortName: 'Ghanacoll', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-19', schoolId: 'inst-19', name: 'Keta Senior High Technical School', shortName: 'Ketasco', region: 'Volta', town: 'Keta', category: 'Category A' },
+  { id: 'inst-20', schoolId: 'inst-20', name: 'Ghana Secondary Technical School (GSTS)', shortName: 'GSTS', region: 'Western', town: 'Takoradi', category: 'Category A' },
+  { id: 'inst-21', schoolId: 'inst-21', name: 'Mawuli School', shortName: 'Mawuli', region: 'Volta', town: 'Ho', category: 'Category A' },
+  { id: 'inst-22', schoolId: 'inst-22', name: 'St. Rose\'s Senior High School', shortName: 'ROSEC', region: 'Eastern', town: 'Akwatia', category: 'Category A' },
+  { id: 'inst-23', schoolId: 'inst-23', name: 'Bishop Herman College', shortName: 'BIHECO', region: 'Volta', town: 'Kpando', category: 'Category A' },
+  { id: 'inst-24', schoolId: 'inst-24', name: 'Archbishop Porter Girls\' Secondary School', shortName: 'APGSS', region: 'Western', town: 'Takoradi', category: 'Category A' },
+  { id: 'inst-25', schoolId: 'inst-25', name: 'Sunyani Senior High School', shortName: 'SUSEC', region: 'Bono', town: 'Sunyani', category: 'Category B' },
+  { id: 'inst-26', schoolId: 'inst-26', name: 'Bolgatanga Senior High School', shortName: 'Big BOSS', region: 'Upper East', town: 'Bolgatanga', category: 'Category B' },
+  { id: 'inst-27', schoolId: 'inst-27', name: 'Wa Senior High School', shortName: 'WASEC', region: 'Upper West', town: 'Wa', category: 'Category B' },
+];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -38,6 +76,7 @@ export default function RegisterPage() {
     fullName: '',
     beceIndexNumber: '',
     assignedSchool: 'Achimota Senior High School',
+    schoolId: 'inst-1',
     programme: 'General Science',
     residentialStatus: 'Boarding',
     aggregateScore: '08',
@@ -47,14 +86,122 @@ export default function RegisterPage() {
     guardianPhone: '',
     guardianEmail: '',
     homeTown: '',
-    pin: 'Password123!',
-    confirmPin: 'Password123!'
+    pin: '',
+    confirmPin: ''
   });
 
   const [showPin, setShowPin] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // School Autocomplete States
+  const [schools, setSchools] = useState(FALLBACK_SCHOOLS);
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState('Achimota Senior High School');
+  const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const schoolDropdownRef = useRef(null);
+  const schoolInputRef = useRef(null);
+
+  // Load institutions from database on mount, merging with rich fallback catalog
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSchools = async () => {
+      try {
+        const liveSchools = await InstitutionService.getAll();
+        if (isMounted && Array.isArray(liveSchools) && liveSchools.length > 0) {
+          const map = new Map();
+          // Add backend live schools
+          liveSchools.forEach((s) => {
+            const key = (s.name || '').toLowerCase().trim();
+            if (key) {
+              map.set(key, {
+                id: s.schoolId || s._id || s.id || `sch-${map.size + 1}`,
+                schoolId: s.schoolId || s._id || s.id,
+                name: s.name,
+                shortName: s.shortName || s.name,
+                region: s.region || 'Ghana',
+                town: s.town || '',
+                category: s.category || 'Senior High School'
+              });
+            }
+          });
+          // Merge fallback catalog without overriding database entries
+          FALLBACK_SCHOOLS.forEach((fallback) => {
+            const key = fallback.name.toLowerCase().trim();
+            if (!map.has(key)) {
+              map.set(key, fallback);
+            }
+          });
+          setSchools(Array.from(map.values()));
+        }
+      } catch {
+        // Fallback catalog remains active if API is uncontactable
+      }
+    };
+    fetchSchools();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Close floating suggestions dropdown when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (schoolDropdownRef.current && !schoolDropdownRef.current.contains(e.target)) {
+        setIsSchoolDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Dynamic filter for suggestions as the candidate types
+  const filteredSchools = useMemo(() => {
+    const q = (schoolSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      return schools.slice(0, 10);
+    }
+    return schools.filter((s) => {
+      const nameMatch = s.name.toLowerCase().includes(q);
+      const shortMatch = s.shortName ? s.shortName.toLowerCase().includes(q) : false;
+      const regionMatch = s.region ? s.region.toLowerCase().includes(q) : false;
+      const townMatch = s.town ? s.town.toLowerCase().includes(q) : false;
+      return nameMatch || shortMatch || regionMatch || townMatch;
+    }).slice(0, 12);
+  }, [schools, schoolSearchQuery]);
+
+  const handleSelectSchool = (school) => {
+    setFormData((prev) => ({
+      ...prev,
+      assignedSchool: school.name,
+      schoolId: school.schoolId || school.id || 'inst-1'
+    }));
+    setSchoolSearchQuery(school.name);
+    setIsSchoolDropdownOpen(false);
+    setFormError('');
+  };
+
+  const handleSchoolInputChange = (e) => {
+    const val = e.target.value;
+    setSchoolSearchQuery(val);
+    setFormData((prev) => ({
+      ...prev,
+      assignedSchool: val
+    }));
+    setIsSchoolDropdownOpen(true);
+    setFormError('');
+  };
+
+  const handleClearSchool = () => {
+    setSchoolSearchQuery('');
+    setFormData((prev) => ({
+      ...prev,
+      assignedSchool: '',
+      schoolId: ''
+    }));
+    setIsSchoolDropdownOpen(true);
+    if (schoolInputRef.current) {
+      schoolInputRef.current.focus();
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,6 +218,7 @@ export default function RegisterPage() {
       fullName: 'Emmanuel Mensah',
       beceIndexNumber: '101245089',
       assignedSchool: 'Achimota Senior High School',
+      schoolId: 'inst-1',
       programme: 'General Science',
       residentialStatus: 'Boarding',
       aggregateScore: '08',
@@ -83,6 +231,7 @@ export default function RegisterPage() {
       pin: 'Password123!',
       confirmPin: 'Password123!'
     });
+    setSchoolSearchQuery('Achimota Senior High School');
     setFormError('');
   };
 
@@ -98,6 +247,11 @@ export default function RegisterPage() {
 
     if (!formData.beceIndexNumber.trim() || formData.beceIndexNumber.trim().length < 8) {
       setFormError('Please enter a valid BECE Index Number (minimum 8-10 digits).');
+      return;
+    }
+
+    if (!formData.assignedSchool || !formData.assignedSchool.trim()) {
+      setFormError('Please select or enter your assigned Senior High School.');
       return;
     }
 
@@ -126,7 +280,8 @@ export default function RegisterPage() {
       const res = await registerCandidate({
         fullName: formData.fullName.trim(),
         beceIndexNumber: formData.beceIndexNumber.trim(),
-        assignedSchool: formData.assignedSchool,
+        assignedSchool: formData.assignedSchool.trim(),
+        schoolId: formData.schoolId || 'inst-1',
         programme: formData.programme,
         residentialStatus: formData.residentialStatus,
         aggregateScore: formData.aggregateScore,
@@ -173,18 +328,18 @@ export default function RegisterPage() {
 
       {/* Subtle evaluation autofill helper */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs px-2 text-slate-500">
-        <span className="flex items-center gap-1.5 font-medium text-slate-600">
+        {/* <span className="flex items-center gap-1.5 font-medium text-slate-600">
           <Shield size={14} className="text-cqTeal-600 shrink-0" />
           Official 2026 Academic Cycle Senior High School Pre-Screening
-        </span>
-        <button
+        </span> */}
+        {/* <button
           type="button"
           onClick={handleFillDemoData}
           className="inline-flex items-center gap-1 text-cqTeal-700 hover:text-cqTeal-800 font-semibold hover:underline self-start sm:self-auto"
         >
           <Sparkles size={13} />
           <span>Quick fill sample candidate</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Main Registration Layout */}
@@ -221,7 +376,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-700">
-                    Student Full Name *
+                    Student Full Name 
                   </label>
                   <input
                     type="text"
@@ -236,7 +391,7 @@ export default function RegisterPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">
-                    BECE Index Number *
+                    BECE Index Number 
                   </label>
                   <input
                     type="text"
@@ -249,20 +404,149 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Assigned Senior High School *
-                  </label>
-                  <select
-                    name="assignedSchool"
-                    value={formData.assignedSchool}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-cqTeal-500 font-medium"
-                  >
-                    <option value="Achimota Senior High School">Achimota Senior High School</option>
-                    <option value="Prempeh College">Prempeh College</option>
-                    <option value="Tamale Senior High School">Tamale Senior High School</option>
-                  </select>
+                <div className="space-y-1 relative" ref={schoolDropdownRef}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Assigned Senior High School *
+                    </label>
+                    <span className="text-[10px] text-cqTeal-600 font-medium hidden sm:inline">
+                      Type to search school
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Search size={15} />
+                    </div>
+                    <input
+                      ref={schoolInputRef}
+                      type="text"
+                      required
+                      placeholder="Type school name e.g. Achimota, PRESEC, Prempeh..."
+                      value={schoolSearchQuery}
+                      onChange={handleSchoolInputChange}
+                      onFocus={() => setIsSchoolDropdownOpen(true)}
+                      className="w-full pl-9 pr-16 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 font-medium transition-colors"
+                      autoComplete="off"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-2 flex items-center gap-0.5">
+                      {schoolSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={handleClearSchool}
+                          className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          title="Clear school selection"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsSchoolDropdownOpen((prev) => !prev)}
+                        className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Toggle suggestions list"
+                      >
+                        <ChevronDown
+                          size={15}
+                          className={`transform transition-transform duration-200 ${
+                            isSchoolDropdownOpen ? 'rotate-180 text-cqTeal-600' : ''
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Floating Suggestions Dropdown */}
+                  {isSchoolDropdownOpen && (
+                    <div className="absolute z-30 left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-72 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                        <span>Suggested Senior High Schools ({filteredSchools.length})</span>
+                        <span className="text-[10px] text-slate-400">Select to assign</span>
+                      </div>
+
+                      <div className="overflow-y-auto divide-y divide-slate-50 py-1">
+                        {filteredSchools.length > 0 ? (
+                          filteredSchools.map((school) => {
+                            const isSelected = formData.assignedSchool === school.name;
+                            return (
+                              <button
+                                key={school.id || school.schoolId || school.name}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectSchool(school);
+                                }}
+                                className={`w-full text-left px-3.5 py-2.5 hover:bg-teal-50/70 transition-colors flex items-start justify-between gap-3 group ${
+                                  isSelected ? 'bg-cqTeal-50/80' : ''
+                                }`}
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`text-xs font-bold truncate ${
+                                        isSelected ? 'text-cqTeal-900' : 'text-slate-800 group-hover:text-cqTeal-900'
+                                      }`}
+                                    >
+                                      {school.name}
+                                    </span>
+                                    {school.shortName && school.shortName !== school.name && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono shrink-0">
+                                        {school.shortName}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                                    {school.region && (
+                                      <span className="flex items-center gap-0.5">
+                                        <MapPin size={11} className="text-slate-400 shrink-0" />
+                                        <span>{school.region}</span>
+                                      </span>
+                                    )}
+                                    {school.town && (
+                                      <>
+                                        <span className="text-slate-300">•</span>
+                                        <span>{school.town}</span>
+                                      </>
+                                    )}
+                                    {school.category && (
+                                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                                        {school.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {isSelected && (
+                                  <div className="shrink-0 mt-1 text-cqTeal-600">
+                                    <Check size={16} />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="p-4 text-center space-y-1.5">
+                            <p className="text-xs font-semibold text-slate-700">
+                              No matching registered school found
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              You can continue typing <strong>"{schoolSearchQuery}"</strong> to register with your custom school name.
+                            </p>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setIsSchoolDropdownOpen(false);
+                              }}
+                              className="mt-1 text-xs font-bold text-cqTeal-700 hover:text-cqTeal-800 hover:underline"
+                            >
+                              Use "{schoolSearchQuery}" as assigned school
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -369,8 +653,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Contact Phone Number * (Mandatory)
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <Phone size={12} className="text-cqTeal-600" />
+                    <span>Phone Number</span>
                   </label>
                   <input
                     type="tel"
@@ -381,20 +666,23 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
+                  <p className="text-[10px] text-slate-400">Used for account sign-in & SMS password recovery OTP.</p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Guardian Email Address (Optional)
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <Mail size={12} className="text-cqTeal-600" />
+                    <span>Email Address</span>
                   </label>
                   <input
                     type="email"
                     name="guardianEmail"
-                    placeholder="e.g. kwame.mensah@example.com (optional)"
+                    placeholder="e.g. kwame.mensah@example.com"
                     value={formData.guardianEmail}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
+                  <p className="text-[10px] text-slate-400">Used for digital receipts & email password recovery OTP.</p>
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
@@ -425,14 +713,14 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">
-                    Account Password (min. 8 characters)
+                    Password (min. 8 characters)
                   </label>
                   <div className="relative">
                     <input
                       type={showPin ? 'text' : 'password'}
-                      name="pin"
+                      name="password"
                       placeholder="Enter secure password"
-                      value={formData.pin}
+                      value={formData.password}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
                     />

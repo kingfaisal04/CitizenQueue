@@ -57,6 +57,7 @@ export default function SignInPage() {
 
   // Forgot Password Flow State
   const [forgotStep, setForgotStep] = useState('request'); // 'request' | 'reset' | 'success'
+  const [forgotMode, setForgotMode] = useState('email'); // 'email' | 'phone' | 'index'
   const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [forgotChannel, setForgotChannel] = useState('email'); // 'email' | 'phone'
   const [maskedDestination, setMaskedDestination] = useState('');
@@ -73,8 +74,21 @@ export default function SignInPage() {
 
   // Switch to Forgot Password tab with optional pre-filled identifier
   const openForgotPassword = (initialIdentifier = '', initialChannel = 'email') => {
-    setForgotIdentifier(initialIdentifier || studentIdentifier || adminEmail);
-    setForgotChannel(initialChannel);
+    const rawId = (initialIdentifier || studentIdentifier || adminEmail).trim();
+    setForgotIdentifier(rawId);
+    if (rawId.includes('@')) {
+      setForgotMode('email');
+      setForgotChannel('email');
+    } else if (rawId && rawId.replace(/\D/g, '').length === 10 && rawId.startsWith('10')) {
+      setForgotMode('index');
+      setForgotChannel(initialChannel || 'email');
+    } else if (rawId && rawId.replace(/\D/g, '').length >= 8) {
+      setForgotMode('phone');
+      setForgotChannel('phone');
+    } else {
+      setForgotMode(initialChannel === 'phone' ? 'phone' : 'email');
+      setForgotChannel(initialChannel || 'email');
+    }
     setForgotStep('request');
     setOtpCode('');
     setNewPassword('');
@@ -249,7 +263,7 @@ export default function SignInPage() {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
           
           {/* Role & Action Segmented Switcher */}
-          <div className="grid grid-cols-3 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
             <button
               type="button"
               onClick={() => {
@@ -284,7 +298,7 @@ export default function SignInPage() {
               <span>School Staff</span>
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => openForgotPassword()}
               className={`py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
@@ -295,7 +309,7 @@ export default function SignInPage() {
             >
               <KeyRound size={14} className={activeRole === 'forgot_password' ? 'text-cqTeal-600' : 'text-slate-400'} />
               <span>Forgot Password</span>
-            </button>
+            </button> */}
           </div>
 
           {/* Form Error Message */}
@@ -319,7 +333,7 @@ export default function SignInPage() {
             <form onSubmit={handleStudentSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">
-                  BECE Index Number, Email, or Phone Number
+                 Email or Phone Number
                 </label>
                 <input
                   type="text"
@@ -456,62 +470,146 @@ export default function SignInPage() {
               {/* STEP 1: REQUEST OTP */}
               {forgotStep === 'request' && (
                 <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
+                  
+                  {/* Account Recovery Method Switcher */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700">
-                      Your Account Identifier
+                      Choose Recovery Channel
                     </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="BECE Index Number, Email, or Phone Number"
-                      value={forgotIdentifier}
-                      onChange={(e) => setForgotIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors"
-                    />
+                    <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode('email');
+                          setForgotChannel('email');
+                          setFormError('');
+                        }}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          forgotMode === 'email'
+                            ? 'bg-white text-cqNavy-950 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900'
+                        }`}
+                      >
+                        <Mail size={13} className={forgotMode === 'email' ? 'text-cqTeal-600' : 'text-slate-400'} />
+                        <span>By Email</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode('phone');
+                          setForgotChannel('phone');
+                          setFormError('');
+                        }}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          forgotMode === 'phone'
+                            ? 'bg-white text-cqNavy-950 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900'
+                        }`}
+                      >
+                        <Phone size={13} className={forgotMode === 'phone' ? 'text-cqTeal-600' : 'text-slate-400'} />
+                        <span>By Phone</span>
+                      </button>
+
+                      {/* <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode('index');
+                          setFormError('');
+                        }}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          forgotMode === 'index'
+                            ? 'bg-white text-cqNavy-950 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900'
+                        }`}
+                      >
+                        <School size={13} className={forgotMode === 'index' ? 'text-cqTeal-600' : 'text-slate-400'} />
+                        <span>By Index No.</span>
+                      </button> */}
+                    </div>
+                  </div>
+
+                  {/* Input Field Tailored to Selected Mode */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      {forgotMode === 'email' ? (
+                        <>
+                          <Mail size={13} className="text-cqTeal-600" />
+                          <span>Registered Email Address *</span>
+                        </>
+                      ) : forgotMode === 'phone' ? (
+                        <>
+                          <Phone size={13} className="text-cqTeal-600" />
+                          <span>Registered Mobile Phone Number *</span>
+                        </>
+                      ) : (
+                        <>
+                          <School size={13} className="text-cqTeal-600" />
+                          <span>BECE Index Number *</span>
+                        </>
+                      )}
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        type={forgotMode === 'email' ? 'email' : 'text'}
+                        required
+                        placeholder={
+                          forgotMode === 'email'
+                            ? 'Enter email address used at registration'
+                            : forgotMode === 'phone'
+                            ? 'Enter mobile phone (e.g. +233 24 411 2233 or 0244112233)'
+                            : 'Enter 10-digit BECE Index Number'
+                        }
+                        value={forgotIdentifier}
+                        onChange={(e) => setForgotIdentifier(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors"
+                      />
+                    </div>
                     <p className="text-[11px] text-slate-400">
-                      We will locate your profile and send a one-time passcode (OTP).
+                      {forgotMode === 'email'
+                        ? 'We will send a 6-digit confirmation code directly to this email inbox.'
+                        : forgotMode === 'phone'
+                        ? 'We will send a 6-digit confirmation code via SMS to this mobile number.'
+                        : 'Your OTP will be sent to the contact phone or email linked to your admission profile.'}
                     </p>
                   </div>
 
-                  {/* Channel Choice */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">
-                      Receive OTP Confirmation Via
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setForgotChannel('email')}
-                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
-                          forgotChannel === 'email'
-                            ? 'border-cqTeal-500 bg-cqTeal-50/50 text-cqNavy-950 ring-1 ring-cqTeal-500'
-                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                        }`}
-                      >
-                        <Mail size={16} className={forgotChannel === 'email' ? 'text-cqTeal-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
-                        <div>
-                          <div className="text-xs font-bold">Email Address</div>
-                          <div className="text-[10px] text-slate-400">Code sent to inbox</div>
-                        </div>
-                      </button>
+                  {/* Delivery preference when using Index Number */}
+                  {forgotMode === 'index' && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Deliver OTP Code To
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setForgotChannel('email')}
+                          className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                            forgotChannel === 'email'
+                              ? 'border-cqTeal-500 bg-cqTeal-50/50 text-cqNavy-950 ring-1 ring-cqTeal-500'
+                              : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                          }`}
+                        >
+                          <Mail size={14} className={forgotChannel === 'email' ? 'text-cqTeal-600' : 'text-slate-400'} />
+                          <span className="text-xs font-bold">Registered Email</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setForgotChannel('phone')}
-                        className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
-                          forgotChannel === 'phone'
-                            ? 'border-cqTeal-500 bg-cqTeal-50/50 text-cqNavy-950 ring-1 ring-cqTeal-500'
-                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                        }`}
-                      >
-                        <Phone size={16} className={forgotChannel === 'phone' ? 'text-cqTeal-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
-                        <div>
-                          <div className="text-xs font-bold">Phone Number</div>
-                          <div className="text-[10px] text-slate-400">Code sent via SMS</div>
-                        </div>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setForgotChannel('phone')}
+                          className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                            forgotChannel === 'phone'
+                              ? 'border-cqTeal-500 bg-cqTeal-50/50 text-cqNavy-950 ring-1 ring-cqTeal-500'
+                              : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                          }`}
+                        >
+                          <Phone size={14} className={forgotChannel === 'phone' ? 'text-cqTeal-600' : 'text-slate-400'} />
+                          <span className="text-xs font-bold">Registered Phone</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <button
                     type="submit"

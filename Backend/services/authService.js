@@ -89,11 +89,15 @@ export class AuthService {
       assignedSchool: schoolDoc?.name || 'Achimota Senior High School',
       beceIndexNumber: assignedIndexNumber,
       fullName,
+      phone: phoneNumber || '',
+      email: email || '',
       programme,
       residentialStatus,
-      guardianName: 'Parent / Legal Guardian',
-      guardianPhone: phoneNumber,
-      guardianEmail: email || '',
+      guardianName: data.guardianName || 'Parent / Legal Guardian',
+      guardianPhone: data.guardianPhone || phoneNumber,
+      guardianEmail: data.guardianEmail || email || '',
+      guardianRelation: data.guardianRelation || 'Guardian',
+      homeTown: data.homeTown || '',
       placementBatch: 'CSSPS 2026 Regular Batch',
     });
     await student.save();
@@ -413,7 +417,7 @@ export class AuthService {
     const identifier = rawIdentifier.trim();
     const digitsOnly = identifier.replace(/\D/g, '');
 
-    // 1. Direct search by email or phone
+    // 1. Direct search on User by email or phone
     let user = await User.findOne({
       $or: [
         { email: identifier.toLowerCase() },
@@ -421,19 +425,21 @@ export class AuthService {
       ],
     });
 
-    // 2. Search by phone digits if phone has country code or whitespace
+    // 2. Search on User by phone digits if phone has country code or whitespace
     if (!user && digitsOnly.length >= 7) {
       user = await User.findOne({
         phone: { $regex: digitsOnly.slice(-9) },
       });
     }
 
-    // 3. Search via Student by beceIndexNumber or guardian phone/email
+    // 3. Search via Student by student phone, student email, beceIndexNumber, or guardian phone/email
     let student = null;
     if (!user) {
       student = await Student.findOne({
         $or: [
           { beceIndexNumber: identifier },
+          { phone: identifier },
+          { email: identifier.toLowerCase() },
           { guardianPhone: identifier },
           { guardianEmail: identifier.toLowerCase() },
         ],
@@ -441,7 +447,10 @@ export class AuthService {
 
       if (!student && digitsOnly.length >= 7) {
         student = await Student.findOne({
-          guardianPhone: { $regex: digitsOnly.slice(-9) },
+          $or: [
+            { phone: { $regex: digitsOnly.slice(-9) } },
+            { guardianPhone: { $regex: digitsOnly.slice(-9) } },
+          ],
         });
       }
 
@@ -465,23 +474,34 @@ export class AuthService {
       throw ApiError.notFound('No account associated with that BECE Index, email, or phone number was found.');
     }
 
-    // Determine destination based on channel
-    let channel = preferredChannel === 'phone' ? 'phone' : 'email';
+    // Auto-detect channel if user input is distinctly an email address or mobile phone number
+    const isEmailInput = identifier.includes('@');
+    const isPhoneInput = !isEmailInput && identifier.replace(/\D/g, '').length >= 8;
+
+    let channel = preferredChannel;
+    if (isEmailInput) {
+      channel = 'email';
+    } else if (isPhoneInput) {
+      channel = 'phone';
+    } else if (!channel) {
+      channel = 'email';
+    }
+
     let destination = null;
 
     if (channel === 'phone') {
-      destination = user.phone || student?.guardianPhone;
-      if (!destination && (user.email || student?.guardianEmail)) {
+      destination = user.phone || student?.phone || student?.guardianPhone;
+      if (!destination && (user.email || student?.email || student?.guardianEmail)) {
         // Fallback to email if phone not on file
         channel = 'email';
-        destination = user.email || student?.guardianEmail;
+        destination = user.email || student?.email || student?.guardianEmail;
       }
     } else {
-      destination = user.email || student?.guardianEmail;
-      if (!destination && (user.phone || student?.guardianPhone)) {
+      destination = user.email || student?.email || student?.guardianEmail;
+      if (!destination && (user.phone || student?.phone || student?.guardianPhone)) {
         // Fallback to phone if email not on file
         channel = 'phone';
-        destination = user.phone || student?.guardianPhone;
+        destination = user.phone || student?.phone || student?.guardianPhone;
       }
     }
 

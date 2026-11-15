@@ -37,6 +37,19 @@ const StudentSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+      index: true
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: '',
+      index: true
+    },
     gender: {
       type: String,
       enum: ['Male', 'Female', 'Other'],
