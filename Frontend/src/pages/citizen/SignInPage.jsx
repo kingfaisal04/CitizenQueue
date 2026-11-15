@@ -213,6 +213,11 @@ export default function SignInPage() {
       return;
     }
 
+    if (!/[a-zA-Z]/.test(newPassword)) {
+      setFormError('Your new password must contain at least one letter (a-z or A-Z).');
+      return;
+    }
+
     if (newPassword !== confirmNewPassword) {
       setFormError('The new password and confirmation password do not match.');
       return;
@@ -682,14 +687,19 @@ export default function SignInPage() {
 
                   {/* New Password */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">
-                      New Password (min. 8 characters)
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">
+                        New Password (min. 8 characters)
+                      </label>
+                      <span className="text-[10px] text-cqTeal-600 font-medium">
+                        At least 1 letter
+                      </span>
+                    </div>
                     <div className="relative">
                       <input
                         type={showNewPassword ? 'text' : 'password'}
                         required
-                        placeholder="Enter your new password"
+                        placeholder="At least 8 characters (no max limit)"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
@@ -703,13 +713,21 @@ export default function SignInPage() {
                         {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
+                    <p className="text-[10px] text-slate-500">
+                      Must be &ge; 8 characters with at least one letter. No maximum limit.
+                    </p>
                   </div>
 
                   {/* Confirm New Password */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">
-                      Confirm New Password
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Confirm New Password
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        Match above
+                      </span>
+                    </div>
                     <div className="relative">
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
@@ -728,6 +746,9 @@ export default function SignInPage() {
                         {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
+                    <p className="text-[10px] text-slate-500">
+                      Must match password exactly.
+                    </p>
                   </div>
 
                   <button

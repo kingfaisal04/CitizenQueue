@@ -17,7 +17,7 @@
  * - Active candidate dossier switcher
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   CheckCircle2,

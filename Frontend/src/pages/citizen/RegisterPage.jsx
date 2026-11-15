@@ -86,11 +86,13 @@ export default function RegisterPage() {
     guardianPhone: '',
     guardianEmail: '',
     homeTown: '',
+    password: '',
+    confirmPassword: '',
     pin: '',
     confirmPin: ''
   });
 
-  const [showPin, setShowPin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -228,6 +230,8 @@ export default function RegisterPage() {
       guardianPhone: '+233 24 411 2233',
       guardianEmail: 'kwame.mensah@example.com',
       homeTown: 'Kasoa, Central Region',
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
       pin: 'Password123!',
       confirmPin: 'Password123!'
     });
@@ -265,12 +269,20 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!formData.pin || formData.pin.length < 8) {
+    const pwd = (formData.password || formData.pin || '').trim();
+    const confirmPwd = (formData.confirmPassword || formData.confirmPin || '').trim();
+
+    if (!pwd || pwd.length < 8) {
       setFormError('Account password must be at least 8 characters long.');
       return;
     }
 
-    if (formData.pin !== formData.confirmPin) {
+    if (!/[a-zA-Z]/.test(pwd)) {
+      setFormError('Account password must contain at least one letter (a-z or A-Z).');
+      return;
+    }
+
+    if (pwd !== confirmPwd) {
       setFormError('Account password and confirm password do not match.');
       return;
     }
@@ -291,8 +303,8 @@ export default function RegisterPage() {
         guardianPhone: formData.guardianPhone.trim(),
         guardianEmail: formData.guardianEmail.trim() || undefined,
         homeTown: formData.homeTown,
-        password: formData.pin || 'Password123!',
-        confirmPassword: formData.confirmPin || 'Password123!'
+        password: pwd,
+        confirmPassword: confirmPwd
       });
 
       if (res.success) {
@@ -407,11 +419,8 @@ export default function RegisterPage() {
                 <div className="space-y-1 relative" ref={schoolDropdownRef}>
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700">
-                      Assigned Senior High School *
+                      Assigned Senior High School 
                     </label>
-                    <span className="text-[10px] text-cqTeal-600 font-medium hidden sm:inline">
-                      Type to search school
-                    </span>
                   </div>
 
                   <div className="relative">
@@ -712,40 +721,67 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Password (min. 8 characters)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Password (min. 8 characters) *
+                    </label>
+                    <span className="text-[10px] text-cqTeal-600 font-medium">
+                      At least 1 letter
+                    </span>
+                  </div>
                   <div className="relative">
                     <input
-                      type={showPin ? 'text' : 'password'}
+                      type={showPassword ? 'text' : 'password'}
                       name="password"
-                      placeholder="Enter secure password"
+                      placeholder="At least 8 characters (no max limit)"
                       value={formData.password}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPin(!showPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 p-1"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      aria-label="Toggle password visibility"
                     >
-                      {showPin ? <EyeOff size={15} /> : <Eye size={15} />}
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
+                  <p className="text-[10px] text-slate-500">
+                    Must be &ge; 8 characters with at least one letter. There is no 8-character max limit.
+                  </p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Confirm Password
-                  </label>
-                  <input
-                    type={showPin ? 'text' : 'password'}
-                    name="confirmPin"
-                    placeholder="Re-enter password"
-                    value={formData.confirmPin}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Confirm Password *
+                    </label>
+                    <span className="text-[10px] text-slate-400">
+                      Match above
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      placeholder="Re-enter your password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      aria-label="Toggle confirm password visibility"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Must match password exactly.
+                  </p>
                 </div>
               </div>
             </div>

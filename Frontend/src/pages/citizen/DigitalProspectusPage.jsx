@@ -48,6 +48,7 @@ export default function DigitalProspectusPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackToast, setFeedbackToast] = useState('');
   const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -61,6 +62,7 @@ export default function DigitalProspectusPage() {
         const free = AdmissionService.getGesFreeItems();
 
         if (isMounted) {
+           if (p) setProfile(p);
           if (Array.isArray(items)) setProspectus(items);
           if (Array.isArray(free)) setGesFreeItems(free);
           if (statuses) setItemStatuses(statuses);
@@ -257,7 +259,7 @@ export default function DigitalProspectusPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-cqTeal-700 bg-cqTeal-50 px-2.5 py-0.5 rounded-md border border-cqTeal-200">
               <School size={12} className="text-cqTeal-600" />
-              <span>{profile.assignedSchool || 'Achimota Senior High School'}</span>
+             <span>{profile?.assignedSchool || 'Achimota Senior High School'}</span>
             </span>
             <span className="text-[11px] font-medium text-slate-500">
               2026 Academic Year • GES Harmonised Prospectus

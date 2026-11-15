@@ -136,8 +136,13 @@ export default function AdminRegisterPage() {
       return;
     }
 
-    if (!formData.password || formData.password.length < 6) {
-      setFormError('Password must contain at least 6 characters.');
+    if (!formData.password || formData.password.length < 8) {
+      setFormError('Password must contain at least 8 characters (no maximum limit).');
+      return;
+    }
+
+    if (!/[a-zA-Z]/.test(formData.password)) {
+      setFormError('Password must contain at least one letter (a-z or A-Z).');
       return;
     }
 
