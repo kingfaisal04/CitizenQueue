@@ -88,6 +88,22 @@ describe('Authentication & Authorization Suite', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
+
+    it('should reject registration when password contains no letters', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          fullName: 'Kofi Annan',
+          email: 'digitsonly@example.com',
+          password: '1234567890',
+          phoneNumber: '0241122334',
+          schoolId: 'inst-1',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(JSON.stringify(res.body)).toContain('at least one letter');
+    });
   });
 
   describe('POST /api/v1/auth/login', () => {

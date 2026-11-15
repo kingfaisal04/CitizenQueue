@@ -1,9 +1,15 @@
 import { z } from 'zod';
 
+// Reusable password schema: min 8 characters, at least 1 letter, no max limit
+const passwordRule = z
+  .string()
+  .min(8, 'Password must be at least 8 characters long')
+  .regex(/[a-zA-Z]/, 'Password must contain at least one letter');
+
 export const studentRegisterSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address format').toLowerCase().trim(),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  password: passwordRule,
   phoneNumber: z.string().min(10, 'Valid phone number is required').max(20),
   indexNumber: z.string().optional(),
   schoolId: z.string().optional(),
@@ -15,7 +21,7 @@ export const studentRegisterSchema = z.object({
 export const adminRegisterSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
   email: z.string().email('Invalid official email address format').toLowerCase().trim(),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  password: passwordRule,
   phoneNumber: z.string().min(10, 'Valid contact number is required').max(20),
   schoolId: z.string().min(1, 'Associated institution schoolId is required for administrator provisioning'),
   role: z.enum([
@@ -40,7 +46,7 @@ export const refreshTokenSchema = z.object({
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
+  newPassword: passwordRule,
 });
 
 export const forgotPasswordSchema = z.object({
@@ -56,5 +62,5 @@ export const verifyOtpSchema = z.object({
 export const resetPasswordSchema = z.object({
   identifier: z.string().min(1, 'Identifier is required').trim(),
   otp: z.string().min(6, 'Valid 6-digit OTP code is required').max(6, 'OTP must be 6 digits').trim(),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
+  newPassword: passwordRule,
 });

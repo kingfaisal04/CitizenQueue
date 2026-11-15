@@ -610,6 +610,10 @@ export class AuthService {
       throw ApiError.badRequest('New password must be at least 8 characters long.');
     }
 
+    if (!/[a-zA-Z]/.test(newPassword)) {
+      throw ApiError.badRequest('New password must contain at least one letter.');
+    }
+
     // Set new password (pre-save hook will hash it with bcrypt)
     userWithOtp.password = newPassword;
     userWithOtp.resetPasswordOtp = null;
