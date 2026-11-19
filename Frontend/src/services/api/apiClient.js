@@ -132,12 +132,18 @@ export async function request(endpoint, options = {}) {
     }
 
     if (!response.ok) {
+      const detailMessages = Array.isArray(responseData?.data?.details)
+        ? responseData.data.details
+            .map((d) => (d.field ? `${d.field}: ${d.message}` : d.message))
+            .filter(Boolean)
+            .join(' • ')
+        : '';
+
       const errorMessage =
+        detailMessages ||
         responseData?.error ||
         responseData?.message ||
-        (Array.isArray(responseData?.data?.details)
-          ? responseData.data.details.map((d) => d.message).join(', ')
-          : 'Request failed');
+        'Request failed';
 
       return createApiResponse(null, errorMessage, response.status);
     }
@@ -152,9 +158,14 @@ export async function request(endpoint, options = {}) {
       return createApiResponse(null, 'Request timed out. Please check your network connection.', 408);
     }
 
+    const isNetworkError =
+      err.message?.includes('Failed to fetch') ||
+      err.message?.includes('Load failed') ||
+      err.message?.includes('NetworkError');
+
     return createApiResponse(
       null,
-      err.message?.includes('Failed to fetch')
+      isNetworkError
         ? 'Cannot connect to CitizenQueue API server. Please check your connection or ensure backend is running.'
         : err.message || 'Network connectivity error',
       500

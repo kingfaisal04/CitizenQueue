@@ -6,16 +6,32 @@ const passwordRule = z
   .min(8, 'Password must be at least 8 characters long')
   .regex(/[a-zA-Z]/, 'Password must contain at least one letter');
 
+const optionalEmail = z
+  .union([
+    z.string().trim().toLowerCase().email('Invalid email address format'),
+    z.literal(''),
+  ])
+  .optional()
+  .transform((val) => (val === '' ? undefined : val));
+
 export const studentRegisterSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
-  email: z.string().email('Invalid email address format').toLowerCase().trim(),
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100),
+  email: optionalEmail,
   password: passwordRule,
-  phoneNumber: z.string().min(10, 'Valid phone number is required').max(20),
-  indexNumber: z.string().optional(),
-  schoolId: z.string().optional(),
-  academicYear: z.string().optional(),
+  phoneNumber: z.string().trim().min(9, 'Valid phone number is required (at least 9 digits)').max(25),
+  indexNumber: z.string().trim().optional(),
+  schoolId: z.string().trim().optional(),
+  assignedSchool: z.string().trim().optional(),
+  academicYear: z.string().trim().optional(),
   residentialStatus: z.enum(['Day', 'Boarding']).optional(),
-  programme: z.string().optional(),
+  programme: z.string().trim().optional(),
+  aggregateScore: z.string().trim().optional(),
+  juniorHighSchool: z.string().trim().optional(),
+  guardianName: z.string().trim().optional(),
+  guardianRelation: z.string().trim().optional(),
+  guardianPhone: z.string().trim().optional(),
+  guardianEmail: optionalEmail,
+  homeTown: z.string().trim().optional(),
 });
 
 export const adminRegisterSchema = z.object({

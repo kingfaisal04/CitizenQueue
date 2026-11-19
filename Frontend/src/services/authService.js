@@ -77,15 +77,23 @@ export const authService = {
    * Register a new student candidate profile
    */
   register: async (candidateData) => {
+    const rawEmail = (candidateData.email || candidateData.guardianEmail || '').trim();
     const payload = {
       fullName: candidateData.fullName,
-      email: candidateData.email || candidateData.guardianEmail,
+      ...(rawEmail ? { email: rawEmail, guardianEmail: rawEmail } : {}),
       password: candidateData.password || candidateData.pin || 'Password123!',
       phoneNumber: candidateData.phoneNumber || candidateData.phone || candidateData.guardianPhone,
       indexNumber: candidateData.beceIndexNumber || candidateData.indexNumber,
       schoolId: candidateData.schoolId || candidateData.assignedSchoolId || 'inst-1',
+      assignedSchool: candidateData.assignedSchool,
       programme: candidateData.programme || 'General Science',
-      residentialStatus: candidateData.residentialStatus || 'Boarding'
+      residentialStatus: candidateData.residentialStatus || 'Boarding',
+      aggregateScore: candidateData.aggregateScore,
+      juniorHighSchool: candidateData.juniorHighSchool,
+      guardianName: candidateData.guardianName,
+      guardianRelation: candidateData.guardianRelation,
+      guardianPhone: candidateData.guardianPhone,
+      homeTown: candidateData.homeTown
     };
 
     const res = await apiClient.post('/auth/register', payload, { requiresAuth: false });

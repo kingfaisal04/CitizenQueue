@@ -104,6 +104,27 @@ describe('Authentication & Authorization Suite', () => {
       expect(res.body.success).toBe(false);
       expect(JSON.stringify(res.body)).toContain('at least one letter');
     });
+
+    it('should allow registration when optional email is omitted and preserve guardian/school details', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          fullName: 'Yaw Boateng',
+          password: 'SecurePassword123!',
+          phoneNumber: '0245566778',
+          indexNumber: '1019988779',
+          schoolId: 'inst-2',
+          assignedSchool: 'Prempeh College',
+          guardianName: 'Kwesi Boateng',
+          guardianRelation: 'Father',
+          homeTown: 'Kumasi, Ashanti Region',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.student.assignedSchool).toBe('Prempeh College');
+      expect(res.body.data.student.guardianName).toBe('Kwesi Boateng');
+    });
   });
 
   describe('POST /api/v1/auth/login', () => {

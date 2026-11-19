@@ -41,11 +41,11 @@ Creates student admission account post-CSSPS placement.
 ```json
 {
   "beceIndexNumber": "1012450890",
-  "fullName": "Emmanuel Mensah",
+  "fullName": "Mohammed Faisal",
   "gender": "Male",
   "dateOfBirth": "2009-04-12",
-  "assignedSchool": "Achimota Senior High School",
-  "schoolCode": "ACH-SHS-01",
+  "assignedSchool": "KNUST Senior High School",
+  "schoolCode": "KNUST-SHS-01",
   "programme": "General Science",
   "residentialStatus": "Boarding",
   "aggregateScore": 10,
@@ -73,7 +73,7 @@ Creates student admission account post-CSSPS placement.
 ```
 
 #### `POST /api/v1/auth/login`
-Authenticates candidate, guardian, or school administrator.
+Authenticated candidate, guardian, or school administrator.
 - **Request Body:**
 ```json
 {
