@@ -10,7 +10,7 @@
  * - Live validation, password toggle visibility, and sample demo fill helpers
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   School,
@@ -28,9 +28,46 @@ import {
   Mail,
   Phone,
   RotateCcw,
-  Lock
+  Lock,
+  Search,
+  X,
+  Check,
+  ChevronDown,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { InstitutionService } from '../../services/institutionService';
+
+// Fallback catalog of Ghanaian Senior High Schools (merged with live DB schools)
+const FALLBACK_SCHOOLS = [
+  { id: 'inst-1', schoolId: 'inst-1', name: 'Achimota Senior High School', shortName: 'Achimota', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-2', schoolId: 'inst-2', name: 'Prempeh College', shortName: 'Prempeh', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-3', schoolId: 'inst-3', name: 'Tamale Senior High School', shortName: 'Tamasco', region: 'Northern', town: 'Tamale', category: 'Category A' },
+  { id: 'inst-4', schoolId: 'inst-4', name: "Presbyterian Boys' Secondary School (PRESEC Legon)", shortName: 'PRESEC Legon', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-5', schoolId: 'inst-5', name: 'Mfantsipim School', shortName: 'Kwabotwe', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-6', schoolId: 'inst-6', name: "Wesley Girls' High School", shortName: 'Wey Gey Hey', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-7', schoolId: 'inst-7', name: 'Opoku Ware School', shortName: 'OWASS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-8', schoolId: 'inst-8', name: 'Adisadel College', shortName: 'Adisco', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-9', schoolId: 'inst-9', name: "St. Augustine's College", shortName: 'Augusco', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-10', schoolId: 'inst-10', name: 'Accra Academy', shortName: 'Bleoo', region: 'Greater Accra', town: 'Accra', category: 'Category A' },
+  { id: 'inst-11', schoolId: 'inst-11', name: 'Holy Child School', shortName: 'Holico', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-12', schoolId: 'inst-12', name: "St. Peter's Senior High School (PERSCO)", shortName: 'PERSCO', region: 'Eastern', town: 'Nkwatia', category: 'Category A' },
+  { id: 'inst-13', schoolId: 'inst-13', name: "Aburi Girls' Senior High School", shortName: 'ABUGISS', region: 'Eastern', town: 'Aburi', category: 'Category A' },
+  { id: 'inst-14', schoolId: 'inst-14', name: 'St. Louis Senior High School', shortName: 'St. Louis', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-15', schoolId: 'inst-15', name: 'Kumasi High School', shortName: 'KUHIS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-16', schoolId: 'inst-16', name: "Yaa Asantewaa Girls' Senior High School", shortName: 'YAGSHS', region: 'Ashanti', town: 'Kumasi', category: 'Category A' },
+  { id: 'inst-17', schoolId: 'inst-17', name: 'Pope John Senior High School and Minor Seminary', shortName: 'POJOSS', region: 'Eastern', town: 'Koforidua', category: 'Category A' },
+  { id: 'inst-18', schoolId: 'inst-18', name: 'Ghana National College', shortName: 'Ghanacoll', region: 'Central', town: 'Cape Coast', category: 'Category A' },
+  { id: 'inst-19', schoolId: 'inst-19', name: 'Keta Senior High Technical School', shortName: 'Ketasco', region: 'Volta', town: 'Keta', category: 'Category A' },
+  { id: 'inst-20', schoolId: 'inst-20', name: 'Ghana Secondary Technical School (GSTS)', shortName: 'GSTS', region: 'Western', town: 'Takoradi', category: 'Category A' },
+  { id: 'inst-21', schoolId: 'inst-21', name: 'Mawuli School', shortName: 'Mawuli', region: 'Volta', town: 'Ho', category: 'Category A' },
+  { id: 'inst-22', schoolId: 'inst-22', name: "St. Rose's Senior High School", shortName: 'ROSEC', region: 'Eastern', town: 'Akwatia', category: 'Category A' },
+  { id: 'inst-23', schoolId: 'inst-23', name: 'Bishop Herman College', shortName: 'BIHECO', region: 'Volta', town: 'Kpando', category: 'Category A' },
+  { id: 'inst-24', schoolId: 'inst-24', name: "Archbishop Porter Girls' Secondary School", shortName: 'APGSS', region: 'Western', town: 'Takoradi', category: 'Category A' },
+  { id: 'inst-25', schoolId: 'inst-25', name: 'Sunyani Senior High School', shortName: 'SUSEC', region: 'Bono', town: 'Sunyani', category: 'Category B' },
+  { id: 'inst-26', schoolId: 'inst-26', name: 'Bolgatanga Senior High School', shortName: 'Big BOSS', region: 'Upper East', town: 'Bolgatanga', category: 'Category B' },
+  { id: 'inst-27', schoolId: 'inst-27', name: 'Wa Senior High School', shortName: 'WASEC', region: 'Upper West', town: 'Wa', category: 'Category B' }
+];
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -45,15 +82,101 @@ export default function SignInPage() {
   const [activeRole, setActiveRole] = useState('student');
 
   // Student Form State
-  const [studentIdentifier, setStudentIdentifier] = useState('101245089');
-  const [studentPassword, setStudentPassword] = useState('Password123!');
+  const [studentIdentifier, setStudentIdentifier] = useState('');
+  const [studentPassword, setStudentPassword] = useState('');
   const [showStudentPassword, setShowStudentPassword] = useState(false);
 
   // Admin Form State
-  const [adminEmail, setAdminEmail] = useState('admin@achimota.edu.gh');
-  const [adminPassword, setAdminPassword] = useState('Password123!');
-  const [adminSchool, setAdminSchool] = useState('Achimota Senior High School');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminSchool, setAdminSchool] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+
+  // Staff School Autocomplete State
+  const [schools, setSchools] = useState(FALLBACK_SCHOOLS);
+  const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const schoolDropdownRef = useRef(null);
+  const schoolInputRef = useRef(null);
+
+  // Load schools from backend and merge with fallback catalog
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSchools = async () => {
+      try {
+        const liveSchools = await InstitutionService.getAll();
+        if (isMounted && Array.isArray(liveSchools) && liveSchools.length > 0) {
+          const map = new Map();
+          liveSchools.forEach((s) => {
+            const key = (s.name || '').toLowerCase().trim();
+            if (key) {
+              map.set(key, {
+                id: s.schoolId || s._id || s.id || `sch-${map.size + 1}`,
+                schoolId: s.schoolId || s._id || s.id,
+                name: s.name,
+                shortName: s.shortName || s.name,
+                region: s.region || 'Ghana',
+                town: s.town || s.city || '',
+                category: s.category || 'Senior High School'
+              });
+            }
+          });
+          FALLBACK_SCHOOLS.forEach((fallback) => {
+            const key = fallback.name.toLowerCase().trim();
+            if (!map.has(key)) {
+              map.set(key, fallback);
+            }
+          });
+          setSchools(Array.from(map.values()));
+        }
+      } catch {
+        // Fallback catalog remains active
+      }
+    };
+    fetchSchools();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Close suggestions dropdown when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (schoolDropdownRef.current && !schoolDropdownRef.current.contains(e.target)) {
+        setIsSchoolDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Dynamic school suggestions filter as staff types
+  const filteredSchools = useMemo(() => {
+    const q = (adminSchool || '').trim().toLowerCase();
+    if (!q) {
+      return schools.slice(0, 10);
+    }
+    return schools
+      .filter((s) => {
+        const nameMatch = s.name.toLowerCase().includes(q);
+        const shortMatch = s.shortName ? s.shortName.toLowerCase().includes(q) : false;
+        const regionMatch = s.region ? s.region.toLowerCase().includes(q) : false;
+        const townMatch = s.town ? s.town.toLowerCase().includes(q) : false;
+        return nameMatch || shortMatch || regionMatch || townMatch;
+      })
+      .slice(0, 12);
+  }, [schools, adminSchool]);
+
+  const handleSelectAdminSchool = (school) => {
+    setAdminSchool(school.name);
+    setIsSchoolDropdownOpen(false);
+    setFormError('');
+  };
+
+  const handleClearAdminSchool = () => {
+    setAdminSchool('');
+    setIsSchoolDropdownOpen(true);
+    if (schoolInputRef.current) {
+      schoolInputRef.current.focus();
+    }
+  };
 
   // Forgot Password Flow State
   const [forgotStep, setForgotStep] = useState('request'); // 'request' | 'reset' | 'success'
@@ -138,7 +261,7 @@ export default function SignInPage() {
     setIsSubmitting(true);
 
     if (!adminEmail.trim()) {
-      setFormError('Please enter your staff institutional email address.');
+      setFormError('Please enter your institutional email address.');
       setIsSubmitting(false);
       return;
     }
@@ -343,7 +466,7 @@ export default function SignInPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. 101245089 or phone number"
+                  placeholder="Enter your email or number"
                   value={studentIdentifier}
                   onChange={(e) => setStudentIdentifier(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors"
@@ -353,7 +476,7 @@ export default function SignInPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-700">
-                    Account Password
+                    Password
                   </label>
                   <button
                     type="button"
@@ -367,7 +490,7 @@ export default function SignInPage() {
                   <input
                     type={showStudentPassword ? 'text' : 'password'}
                     required
-                    placeholder="Enter your account password"
+                    placeholder="Enter your password"
                     value={studentPassword}
                     onChange={(e) => setStudentPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors pr-10"
@@ -386,9 +509,9 @@ export default function SignInPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-fit mx-auto px-8 py-3 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.98]"
               >
-                <span>{isSubmitting ? 'Signing In...' : 'Sign In to Candidate Dashboard'}</span>
+                <span>{isSubmitting ? 'Signing In...' : 'Sign In'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -397,17 +520,160 @@ export default function SignInPage() {
           {/* 2. ADMIN FORM */}
           {activeRole === 'admin' && (
             <form onSubmit={handleAdminSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  Assigned Senior High School
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={adminSchool}
-                  onChange={(e) => setAdminSchool(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors"
-                />
+              <div className="space-y-1.5 relative" ref={schoolDropdownRef}>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Assigned Senior High School
+                  </label>
+                  <span className="text-[10px] text-cqTeal-600 font-medium">
+                    Type to search school
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Search size={15} />
+                  </div>
+                  <input
+                    ref={schoolInputRef}
+                    type="text"
+                    required
+                    placeholder="Type school name e.g. Achimota, Prempeh, PRESEC..."
+                    value={adminSchool}
+                    onChange={(e) => {
+                      setAdminSchool(e.target.value);
+                      setIsSchoolDropdownOpen(true);
+                      setFormError('');
+                    }}
+                    onFocus={() => setIsSchoolDropdownOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsSchoolDropdownOpen(false);
+                      }
+                    }}
+                    autoComplete="off"
+                    className="w-full pl-9 pr-16 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors font-medium"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-2 flex items-center gap-0.5">
+                    {adminSchool && (
+                      <button
+                        type="button"
+                        onClick={handleClearAdminSchool}
+                        className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Clear school name"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsSchoolDropdownOpen((prev) => !prev)}
+                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      title="Toggle school suggestions"
+                    >
+                      <ChevronDown
+                        size={15}
+                        className={`transform transition-transform duration-200 ${
+                          isSchoolDropdownOpen ? 'rotate-180 text-cqTeal-600' : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Floating Suggestions Dropdown */}
+                {isSchoolDropdownOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-64 flex flex-col">
+                    <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span>Suggested Schools ({filteredSchools.length})</span>
+                      <span className="text-[10px] text-slate-400">Click to select</span>
+                    </div>
+
+                    <div className="overflow-y-auto divide-y divide-slate-50 py-1">
+                      {filteredSchools.length > 0 ? (
+                        filteredSchools.map((school) => {
+                          const isSelected = adminSchool === school.name;
+                          return (
+                            <button
+                              key={school.id || school.schoolId || school.name}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleSelectAdminSchool(school);
+                              }}
+                              className={`w-full text-left px-3.5 py-2.5 hover:bg-teal-50/70 transition-colors flex items-start justify-between gap-3 group ${
+                                isSelected ? 'bg-cqTeal-50/80' : ''
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-xs font-bold truncate ${
+                                      isSelected
+                                        ? 'text-cqTeal-900'
+                                        : 'text-slate-800 group-hover:text-cqTeal-900'
+                                    }`}
+                                  >
+                                    {school.name}
+                                  </span>
+                                  {school.shortName && school.shortName !== school.name && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono shrink-0">
+                                      {school.shortName}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                                  {school.region && (
+                                    <span className="flex items-center gap-0.5">
+                                      <MapPin size={11} className="text-slate-400 shrink-0" />
+                                      <span>{school.region}</span>
+                                    </span>
+                                  )}
+                                  {school.town && (
+                                    <>
+                                      <span className="text-slate-300">•</span>
+                                      <span>{school.town}</span>
+                                    </>
+                                  )}
+                                  {school.category && (
+                                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                                      {school.category}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isSelected && (
+                                <div className="shrink-0 mt-1 text-cqTeal-600">
+                                  <Check size={16} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="p-4 text-center space-y-1.5">
+                          <p className="text-xs font-semibold text-slate-700">
+                            No matching registered school found
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            You can continue with <strong>"{adminSchool}"</strong> as your designated institution.
+                          </p>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setIsSchoolDropdownOpen(false);
+                            }}
+                            className="mt-1 text-xs font-bold text-cqTeal-700 hover:text-cqTeal-800 hover:underline"
+                          >
+                            Use "{adminSchool}"
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -460,9 +726,9 @@ export default function SignInPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-fit mx-auto px-8 py-3 rounded-xl bg-cqNavy-950 hover:bg-cqNavy-900 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.98]"
               >
-                <span>{isSubmitting ? 'Authenticating...' : 'Sign In to School Staff Desk'}</span>
+                <span>{isSubmitting ? 'Authenticating...' : 'Sign In'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -540,12 +806,12 @@ export default function SignInPage() {
                       {forgotMode === 'email' ? (
                         <>
                           <Mail size={13} className="text-cqTeal-600" />
-                          <span>Registered Email Address *</span>
+                          <span>Email Address *</span>
                         </>
                       ) : forgotMode === 'phone' ? (
                         <>
                           <Phone size={13} className="text-cqTeal-600" />
-                          <span>Registered Mobile Phone Number *</span>
+                          <span>Phone Number *</span>
                         </>
                       ) : (
                         <>
@@ -814,7 +1080,7 @@ export default function SignInPage() {
             </div>
           )}
 
-          {/* Discreet Sample Fill Helper for Sign In */}
+          {/* Discreet Sample Fill Helper for Sign In
           {activeRole !== 'forgot_password' && (
             <div className="pt-2 border-t border-slate-100 flex items-center justify-center">
               {activeRole === 'student' ? (
@@ -844,7 +1110,7 @@ export default function SignInPage() {
                 </button>
               )}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Link to Register or Back to Sign In */}

@@ -331,7 +331,7 @@ export default function RegisterPage() {
           <School size={24} />
         </div>
         <h1 className="text-3xl font-black text-cqNavy-950 tracking-tight">
-          Register Admission Profile
+          Student Profile
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
           Create your digital profile after receiving your CSSPS placement. Coordinate prospectus requirements, submit documents, and reserve your reporting slot.
@@ -409,7 +409,7 @@ export default function RegisterPage() {
                     type="text"
                     required
                     name="beceIndexNumber"
-                    placeholder="e.g. 101245089"
+                    placeholder="Enter Your BECE Index Number"
                     value={formData.beceIndexNumber}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 font-mono"
@@ -664,7 +664,7 @@ export default function RegisterPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                     <Phone size={12} className="text-cqTeal-600" />
-                    <span>Phone Number</span>
+                    <span>Phone Number * </span>
                   </label>
                   <input
                     type="tel"
@@ -675,7 +675,6 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
-                  <p className="text-[10px] text-slate-400">Used for account sign-in & SMS password recovery OTP.</p>
                 </div>
 
                 <div className="space-y-1">
@@ -691,7 +690,6 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
-                  <p className="text-[10px] text-slate-400">Used for digital receipts & email password recovery OTP.</p>
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">

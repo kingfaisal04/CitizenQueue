@@ -207,15 +207,15 @@ export default function LandingPage() {
 
           {/* Quick Action Links */}
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-300 pt-2">
-            <Link to="/register" className="hover:text-white underline underline-offset-4">
+            {/* <Link to="/register" className="hover:text-white underline underline-offset-4">
               New Candidate Registration
-            </Link>
-            <span>•</span>
-            <Link to="/login" className="hover:text-white underline underline-offset-4">
+            </Link> */}
+        
+            {/* <Link to="/login" className="hover:text-white underline underline-offset-4">
               Sign In to Candidate Dashboard
             </Link>
-            <span>•</span>
-            <Link to="/book" className="hover:text-white underline underline-offset-4">
+             */}
+            <Link to="/book" className="hover:text-white">
               View Available Reporting Slots
             </Link>
           </div>
@@ -295,9 +295,6 @@ export default function LandingPage() {
                     <div className="w-12 h-12 rounded-2xl bg-cqNavy-950 text-cqTeal-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform">
                       <Icon size={22} />
                     </div>
-                    <span className="text-2xl font-black text-slate-300 font-mono">
-                      {step.num}
-                    </span>
                   </div>
 
                   <h4 className="text-base font-bold text-slate-900">
@@ -332,9 +329,7 @@ export default function LandingPage() {
             {/* Student Card */}
             <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-xl bg-cqTeal-50 text-cqTeal-700 flex items-center justify-center font-bold">
-                  <Users size={20} />
-                </div>
+          
                 <h3 className="text-xl font-bold text-slate-900">
                   For Students and Guardians
                 </h3>
@@ -366,9 +361,7 @@ export default function LandingPage() {
             {/* School Administration Card */}
             <div className="p-8 rounded-3xl bg-cqNavy-950 text-white border border-cqNavy-900 shadow-sm space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-xl bg-cqNavy-800 text-cqTeal-300 flex items-center justify-center font-bold border border-cqNavy-700">
-                  <Building2 size={20} />
-                </div>
+               
                 <h3 className="text-xl font-bold text-white">
                   For School Heads & Desk Officers
                 </h3>
@@ -465,7 +458,7 @@ export default function LandingPage() {
               to="/register"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-cqTeal-500 hover:bg-cqTeal-400 text-cqNavy-950 font-bold text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
             >
-              <span>Register Admission Profile</span>
+              <span>Register</span>
               <ArrowRight size={16} />
             </Link>
 
@@ -473,7 +466,7 @@ export default function LandingPage() {
               to="/login"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-cqNavy-800 hover:bg-cqNavy-700 text-white font-semibold text-sm transition-all border border-cqNavy-700"
             >
-              <span>Sign In to Existing Account</span>
+              <span>Sign In</span>
             </Link>
           </div>
         </div>

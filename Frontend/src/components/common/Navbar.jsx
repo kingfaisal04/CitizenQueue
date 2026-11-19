@@ -323,7 +323,7 @@ export default function Navbar() {
                             className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                           >
                             <LogOut size={14} />
-                            <span>Sign Out of Account</span>
+                            <span>Sign Out</span>
                           </button>
                         </div>
 
@@ -347,7 +347,7 @@ export default function Navbar() {
                       }`}
                     >
                       <LogIn size={13} className="text-slate-500" />
-                      <span>Candidate Sign In</span>
+                      <span>Sign In</span>
                     </Link>
 
                     {/* Candidate Sign Up */}
@@ -356,7 +356,7 @@ export default function Navbar() {
                       className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-xs bg-cqNavy-950 hover:bg-cqNavy-900 text-white hover:shadow-md"
                     >
                       <UserPlus size={13} className="text-cqTeal-400" />
-                      <span>Candidate Sign Up</span>
+                      <span>Sign Up</span>
                     </Link>
                   </div>
 
@@ -385,7 +385,7 @@ export default function Navbar() {
                       <div className="absolute right-0 top-full mt-2.5 w-[calc(100vw-2rem)] max-w-[310px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 z-50 animate-fade-in divide-y divide-slate-100">
                         
                         {/* Dropdown Header Context */}
-                        <div className="pb-3 px-1">
+                        {/* <div className="pb-3 px-1">
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <span className="text-[10px] font-black uppercase tracking-wider text-cqTeal-700 bg-cqTeal-50 border border-cqTeal-200/60 px-2 py-0.5 rounded-md">
                               SHS Admissions
@@ -400,7 +400,7 @@ export default function Navbar() {
                           <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
                             Verify school placement, digital prospectus, and reporting schedule.
                           </p>
-                        </div>
+                        </div> */}
 
                         {/* Sign Up & Sign In Navigation Options */}
                         <div className="py-2.5 space-y-2">
@@ -418,15 +418,10 @@ export default function Navbar() {
                               <div className="text-left truncate">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-bold text-white tracking-tight truncate">
-                                    Candidate Sign Up
+                                    Sign Up
                                   </span>
-                                  <span className="text-[9px] font-extrabold uppercase tracking-wider bg-cqTeal-500/20 text-cqTeal-300 border border-cqTeal-400/30 px-1 py-0.2 rounded shrink-0">
-                                    Register
-                                  </span>
+                                 
                                 </div>
-                                <p className="text-[10px] text-slate-300 leading-tight truncate">
-                                  Create student account with BECE index
-                                </p>
                               </div>
                             </div>
                             <ChevronRight size={15} className="text-cqTeal-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1.5" />
@@ -448,38 +443,13 @@ export default function Navbar() {
                               </div>
                               <div className="text-left truncate">
                                 <span className="text-xs font-bold text-slate-900 tracking-tight block truncate">
-                                  Candidate Sign In
+                                  Sign In
                                 </span>
-                                <p className="text-[10px] text-slate-500 leading-tight truncate">
-                                  Log in to existing admission profile
-                                </p>
                               </div>
                             </div>
                             <ChevronRight size={15} className="text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1.5" />
                           </Link>
-
                         </div>
-
-                        {/* Reassurance & Civic Compliance Footer */}
-                        <div className="pt-2 px-1 space-y-1">
-                          <div className="flex items-center justify-between text-[10px] text-slate-500">
-                            <span className="flex items-center gap-1 text-emerald-600 font-semibold truncate">
-                              <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                              Zero Intermediary Fees
-                            </span>
-                            <span className="text-slate-400 text-[9px] font-medium shrink-0">Republic of Ghana</span>
-                          </div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-500">
-                            <span className="flex items-center gap-1 text-slate-600 truncate">
-                              <Phone size={10} className="text-cqTeal-600 shrink-0" />
-                              Toll-Free: 030 274 0000
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-mono shrink-0">
-                              GES Pre-Arrival
-                            </span>
-                          </div>
-                        </div>
-
                       </div>
                     )}
                   </div>
