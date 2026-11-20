@@ -166,23 +166,27 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-[74px]">
+          <div className="flex items-center justify-between gap-3 h-16 sm:h-[74px]">
             
             {/* Brand Logo & National Seal Badge */}
             <Link
               to="/"
-              className="flex items-center gap-3 group shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cqTeal-500/40 rounded-2xl"
+              className="flex items-center gap-2.5 sm:gap-3 group shrink-0 min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cqTeal-500/40 rounded-2xl"
             >
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-cqNavy-900 via-cqNavy-950 to-cqNavy-950 text-white flex items-center justify-center shadow-[0_6px_16px_-4px_rgba(15,23,42,0.35)] ring-1 ring-inset ring-white/10 group-hover:-translate-y-0.5 group-hover:shadow-[0_10px_22px_-6px_rgba(15,23,42,0.45)] transition-all duration-200">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-cqNavy-900 via-cqNavy-950 to-cqNavy-950 text-white flex items-center justify-center shadow-[0_6px_16px_-4px_rgba(15,23,42,0.35)] ring-1 ring-inset ring-white/10 group-hover:-translate-y-0.5 group-hover:shadow-[0_10px_22px_-6px_rgba(15,23,42,0.45)] transition-all duration-200 shrink-0">
                 <School className="w-5 h-5 sm:w-[22px] sm:h-[22px] text-cqTeal-400 group-hover:scale-105 transition-transform duration-200" />
               </div>
-              <div className="leading-tight">
+              <div className="leading-tight min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-xl sm:text-[22px] tracking-[-0.025em] text-cqNavy-950 font-sans">
+                  <span className="font-black text-lg sm:text-[22px] tracking-[-0.025em] text-cqNavy-950 font-sans truncate">
                     Citizen<span className="text-cqTeal-600">Queue</span>
                   </span>
                 </div>
-                <p className="text-[11px] font-medium text-slate-500 tracking-[0.01em] mt-0.5 hidden md:block">
+                <p
+                  className={`text-[11px] font-medium text-slate-500 tracking-[0.01em] mt-0.5 truncate ${
+                    isAuthenticated ? 'hidden 2xl:block' : 'hidden md:block'
+                  }`}
+                >
                   Pre-Arrival Verification & Capacity Orchestration
                 </p>
               </div>
@@ -192,7 +196,7 @@ export default function Navbar() {
             {isAuthenticated && (
               <nav
                 aria-label="Primary candidate navigation"
-                className="hidden lg:flex items-center gap-0.5 bg-slate-100/75 p-1 rounded-2xl border border-slate-200/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)]"
+                className="hidden xl:flex items-center gap-0.5 bg-slate-100/75 p-1 rounded-2xl border border-slate-200/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] shrink-0"
               >
                 {authenticatedLinks.map((link) => {
                   const active = isActive(link.href);
@@ -201,7 +205,7 @@ export default function Navbar() {
                     <Link
                       key={link.name}
                       to={link.href}
-                      className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 whitespace-nowrap ${
+                      className={`group flex items-center gap-1.5 px-2.5 2xl:px-3 py-1.5 rounded-xl text-xs transition-all duration-200 whitespace-nowrap ${
                         active
                           ? 'text-cqNavy-950 bg-white font-bold shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/80'
                           : 'text-slate-600 font-medium hover:text-cqNavy-950 hover:bg-white/60'
@@ -209,7 +213,7 @@ export default function Navbar() {
                     >
                       <Icon
                         size={14}
-                        className={`transition-colors duration-200 ${
+                        className={`shrink-0 transition-colors duration-200 ${
                           active
                             ? 'text-cqTeal-600'
                             : 'text-slate-400 group-hover:text-cqTeal-600'
@@ -223,15 +227,15 @@ export default function Navbar() {
             )}
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
               {isAuthenticated ? (
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   
                   {/* Candidate Journey Stage Pill */}
                   {metrics && (
                     <Link
                       to="/progress"
-                      className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-slate-50/90 rounded-full border border-slate-200/80 text-xs hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all duration-200"
+                      className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 bg-slate-50/90 rounded-full border border-slate-200/80 text-xs hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all duration-200 whitespace-nowrap"
                       title="View complete admission roadmap"
                     >
                       <span className="w-2 h-2 rounded-full bg-cqTeal-500 ring-4 ring-cqTeal-500/15 animate-pulse" />
@@ -395,7 +399,11 @@ export default function Navbar() {
                     {/* Candidate Sign Up */}
                     <Link
                       to="/register"
-                      className="group inline-flex items-center gap-1.5 px-4 sm:px-4.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 bg-gradient-to-b from-cqNavy-900 to-cqNavy-950 hover:from-cqNavy-900 hover:to-cqNavy-900 text-white ring-1 ring-inset ring-white/10 shadow-[0_4px_12px_-2px_rgba(15,23,42,0.35)] hover:shadow-[0_8px_20px_-4px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                      className={`group inline-flex items-center gap-1.5 px-4 sm:px-4.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 bg-gradient-to-b from-cqNavy-900 to-cqNavy-950 hover:from-cqNavy-900 hover:to-cqNavy-900 text-white shadow-[0_4px_12px_-2px_rgba(15,23,42,0.35)] hover:shadow-[0_8px_20px_-4px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] whitespace-nowrap ${
+                        isActive('/register') || isActive('/signup')
+                          ? 'ring-2 ring-cqTeal-500/60 ring-offset-1'
+                          : 'ring-1 ring-inset ring-white/10'
+                      }`}
                     >
                       <UserPlus size={13} className="text-cqTeal-400 group-hover:scale-110 transition-transform duration-200" />
                       <span>Sign Up</span>
@@ -424,7 +432,7 @@ export default function Navbar() {
 
                     {/* Mobile Dropdown Displaying Sign Up and Sign In */}
                     {publicMenuOpen && (
-                      <div className="absolute right-0 top-full mt-2.5 w-[calc(100vw-2rem)] max-w-[300px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(15,23,42,0.2)] border border-slate-200/80 ring-1 ring-slate-900/5 p-2.5 z-50 animate-fade-in">
+                      <div className="absolute right-0 top-full mt-2.5 w-72 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(15,23,42,0.2)] border border-slate-200/80 ring-1 ring-slate-900/5 p-2.5 z-50 animate-fade-in">
                         <div className="space-y-2">
                           
                           {/* 1. Candidate Sign Up */}
@@ -476,9 +484,9 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Mobile Hamburger Toggle Button (Only for Authenticated Candidates) */}
+              {/* Mobile & Tablet Hamburger Toggle Button (Only for Authenticated Candidates) */}
               {isAuthenticated && (
-                <div className="flex lg:hidden items-center ml-1">
+                <div className="flex xl:hidden items-center ml-1">
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -487,6 +495,7 @@ export default function Navbar() {
                         ? 'bg-slate-100 text-cqNavy-950 border-slate-300 shadow-inner'
                         : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200/90 shadow-2xs'
                     }`}
+                    aria-expanded={mobileMenuOpen}
                     aria-label="Toggle navigation menu"
                   >
                     {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -498,9 +507,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* 3. Mobile Dropdown Navigation Drawer (Only for Authenticated Candidates) */}
+        {/* 3. Mobile & Tablet Dropdown Navigation Drawer (Only for Authenticated Candidates) */}
         {isAuthenticated && mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200/80 bg-white/95 backdrop-blur-xl px-4 pt-3.5 pb-6 space-y-4 animate-fade-in shadow-[0_20px_50px_-12px_rgba(15,23,42,0.16)]">
+          <div className="xl:hidden border-t border-slate-200/80 bg-white/95 backdrop-blur-xl px-4 pt-3.5 pb-6 space-y-4 animate-fade-in shadow-[0_20px_50px_-12px_rgba(15,23,42,0.16)]">
             
             {/* Mobile Candidate Card */}
             <div className="p-3.5 bg-gradient-to-r from-cqNavy-950 to-cqNavy-900 text-white rounded-2xl flex items-center justify-between border border-cqNavy-800 ring-1 ring-inset ring-white/10 shadow-sm">
