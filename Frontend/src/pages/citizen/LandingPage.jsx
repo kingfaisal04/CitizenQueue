@@ -427,40 +427,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* FINAL CALL TO ACTION */}
-      <section className="py-16 sm:py-20 bg-gradient-to-r from-cqNavy-950 to-cqNavy-900 text-white text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="w-12 h-12 rounded-2xl bg-cqNavy-800 text-cqTeal-400 flex items-center justify-center mx-auto border border-cqNavy-700 shadow-sm">
-            <School size={24} />
-          </div>
-
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
-            Have Your Placement Slip Ready?
-          </h2>
-
-          <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-            Register your candidate admission profile now, review your school’s digital prospectus, and secure your physical reporting slot.
-          </p>
-
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-cqTeal-500 hover:bg-cqTeal-400 text-cqNavy-950 font-bold text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
-            >
-              <span>Register</span>
-              <ArrowRight size={16} />
-            </Link>
-
-            <Link
-              to="/login"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-cqNavy-800 hover:bg-cqNavy-700 text-white font-semibold text-sm transition-all border border-cqNavy-700"
-            >
-              <span>Sign In</span>
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
