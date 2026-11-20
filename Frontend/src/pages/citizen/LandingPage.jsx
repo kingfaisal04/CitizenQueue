@@ -293,7 +293,7 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <h4 className="text-base font-bold text-slate-900">
+                  <h4 className="flex items-center justify-center text-base font-bold text-slate-900">
                     {step.title}
                   </h4>
                 </div>

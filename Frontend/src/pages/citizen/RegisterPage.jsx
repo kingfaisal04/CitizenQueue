@@ -851,9 +851,9 @@ export default function RegisterPage() {
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 w-fit px-6 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-900 hover:text-white text-xs font-bold text-slate-800 transition-colors"
             >
-              <span>Sign In to Your Account</span>
+              <span>Sign In</span>
               <ArrowRight size={14} />
             </Link>
           </div>
