@@ -90,25 +90,21 @@ export default function LandingPage() {
     {
       num: '01',
       title: 'Confirm Placement & Bio-Data',
-      desc: 'Verify your assigned school and programme after receiving your official CSSPS placement results.',
       icon: School
     },
     {
       num: '02',
       title: 'Digital Prospectus Checklist',
-      desc: 'Review mandatory school supplies, partitioned into general items and boy/girl uniform specifications.',
       icon: ShoppingBag
     },
     {
       num: '03',
       title: 'Document Pre-Verification',
-      desc: 'Submit your BECE Result Slip and Birth Certificate online so school administrators can review them before you travel.',
       icon: FileCheck2
     },
     {
       num: '04',
       title: 'Reserve Reporting Slot',
-      desc: 'Pick an orderly physical arrival intake window to finalize registration on campus without chaotic queues.',
       icon: CalendarCheck
     }
   ];
@@ -291,7 +287,7 @@ export default function LandingPage() {
                   key={step.num}
                   className="p-6 rounded-3xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-cqTeal-300 hover:shadow-md transition-all space-y-4 group"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-center">
                     <div className="w-12 h-12 rounded-2xl bg-cqNavy-950 text-cqTeal-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform">
                       <Icon size={22} />
                     </div>
@@ -300,10 +296,6 @@ export default function LandingPage() {
                   <h4 className="text-base font-bold text-slate-900">
                     {step.title}
                   </h4>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {step.desc}
-                  </p>
                 </div>
               );
             })}
@@ -398,9 +390,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           <div className="text-center space-y-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-cqTeal-600">
-              Clear Answers
-            </h2>
+            
             <h3 className="text-2xl sm:text-3xl font-black text-cqNavy-950 tracking-tight">
               Frequently Asked Questions
             </h3>

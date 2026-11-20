@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   registerStudent,
+  registerInstitution,
   registerAdmin,
   login,
   refreshToken,
@@ -15,6 +16,7 @@ import { authLimiter } from '../middleware/rateLimitMiddleware.js';
 import { validate } from '../middleware/validationMiddleware.js';
 import {
   studentRegisterSchema,
+  institutionRegisterSchema,
   adminRegisterSchema,
   loginSchema,
   forgotPasswordSchema,
@@ -25,6 +27,7 @@ import {
 const router = express.Router();
 
 router.post('/register', authLimiter, validate(studentRegisterSchema), registerStudent);
+router.post('/register-institution', authLimiter, validate(institutionRegisterSchema), registerInstitution);
 router.post('/register-admin', authLimiter, validate(adminRegisterSchema), registerAdmin);
 router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);

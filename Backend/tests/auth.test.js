@@ -125,6 +125,33 @@ describe('Authentication & Authorization Suite', () => {
       expect(res.body.data.student.assignedSchool).toBe('Prempeh College');
       expect(res.body.data.student.guardianName).toBe('Kwesi Boateng');
     });
+
+    it('should allow newly registered school_admin staff to access admin dashboard', async () => {
+      const regRes = await request(app)
+        .post('/api/v1/auth/register-admin')
+        .send({
+          fullName: 'Kwame Addo',
+          email: 'k.addo@achimota.edu.gh',
+          password: 'StaffPassword123!',
+          phoneNumber: '+233 24 330 9988',
+          schoolId: 'inst-1',
+          role: 'school_admin',
+          staffId: 'GES-482910',
+          designation: 'Senior Housemaster',
+          department: 'Boarding Affairs',
+        });
+
+      expect(regRes.status).toBe(201);
+      expect(regRes.body.data.user.role).toBe('school_admin');
+      expect(regRes.body.data.user.staffId).toBe('GES-482910');
+
+      const dashRes = await request(app)
+        .get('/api/v1/admin/dashboard')
+        .set('Authorization', `Bearer ${regRes.body.data.accessToken}`);
+
+      expect(dashRes.status).toBe(200);
+      expect(dashRes.body.success).toBe(true);
+    });
   });
 
   describe('POST /api/v1/auth/login', () => {
@@ -302,6 +329,119 @@ describe('Authentication & Authorization Suite', () => {
           password: 'OldPassword123!',
         });
       expect(oldLoginRes.status).toBe(401);
+    });
+  });
+
+  describe('Institution Onboarding, Authorization Keys & Staff Role Assignment', () => {
+    it('should register a new institution, generate key, pre-assign Staff ID role, enforce key validation, and restrict non-managers', async () => {
+      // 1. Register brand-new institution
+      const instRes = await request(app)
+        .post('/api/v1/auth/register-institution')
+        .send({
+          schoolName: 'Mfantsipim School',
+          shortName: 'Kwabotwe',
+          category: 'Senior High School',
+          region: 'Central Region',
+          city: 'Cape Coast',
+          adminFullName: 'Dr. Kofi Mensah',
+          adminStaffId: 'MFN-HEAD-01',
+          adminEmail: 'head@mfantsipim.edu.gh',
+          adminPhone: '+233 24 900 1122',
+          password: 'HeadPassword123!',
+        });
+
+      expect(instRes.status).toBe(201);
+      expect(instRes.body.success).toBe(true);
+      expect(instRes.body.data.user.role).toBe('school_admin');
+      expect(instRes.body.data.school.name).toBe('Mfantsipim School');
+      expect(instRes.body.data.authorizationKey).toMatch(/^CQ-/);
+
+      const adminToken = instRes.body.data.accessToken;
+      const newSchoolId = instRes.body.data.school.schoolId;
+      const institutionKey = instRes.body.data.authorizationKey;
+
+      // 2. Public GET /schools must NOT expose authorizationKey or roster
+      const publicSchoolsRes = await request(app).get('/api/v1/schools');
+      expect(publicSchoolsRes.status).toBe(200);
+      const createdPublicSchool = publicSchoolsRes.body.data.find((s) => s.schoolId === newSchoolId);
+      expect(createdPublicSchool).toBeDefined();
+      expect(createdPublicSchool.authorizationKey).toBeUndefined();
+      expect(createdPublicSchool.authorizedStaffRoster).toBeUndefined();
+
+      // 3. School Admin pre-assigns Staff ID MFN-FIN-09 -> finance_officer
+      const rosterRes = await request(app)
+        .post('/api/v1/admin/staff/roster')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          staffId: 'MFN-FIN-09',
+          fullName: 'Abena Osei',
+          assignedRole: 'finance_officer',
+          designation: 'School Bursar',
+          department: 'Bursary & Accounts',
+        });
+
+      expect(rosterRes.status).toBe(201);
+      expect(rosterRes.body.data.staffId).toBe('MFN-FIN-09');
+      expect(rosterRes.body.data.assignedRole).toBe('finance_officer');
+
+      // 4. Reject staff signup with WRONG Institution Key
+      const badKeyRes = await request(app)
+        .post('/api/v1/auth/register-admin')
+        .send({
+          fullName: 'Abena Osei',
+          email: 'abena.osei@mfantsipim.edu.gh',
+          password: 'OfficerPassword123!',
+          phoneNumber: '+233 24 888 7766',
+          schoolId: newSchoolId,
+          staffId: 'MFN-FIN-09',
+          role: 'school_admin',
+          authorizationKey: 'WRONG-KEY-999',
+        });
+
+      expect(badKeyRes.status).toBe(403);
+
+      // 5. Valid Institution Key + pre-assigned Staff ID enforces admin-assigned finance_officer role
+      const staffRes = await request(app)
+        .post('/api/v1/auth/register-admin')
+        .send({
+          fullName: 'Abena Osei',
+          email: 'abena.osei@mfantsipim.edu.gh',
+          password: 'OfficerPassword123!',
+          phoneNumber: '+233 24 888 7766',
+          schoolId: newSchoolId,
+          staffId: 'MFN-FIN-09',
+          role: 'school_admin', // Attempted escalation must be overridden by roster!
+          authorizationKey: institutionKey,
+        });
+
+      expect(staffRes.status).toBe(201);
+      expect(staffRes.body.data.user.role).toBe('finance_officer');
+      expect(staffRes.body.data.user.schoolId).toBe(newSchoolId);
+
+      const officerToken = staffRes.body.data.accessToken;
+      const officerUserId = staffRes.body.data.user._id;
+
+      // 6. Finance Officer cannot view Institution Key or rotate it (403 Forbidden)
+      const forbiddenStaffMgmt = await request(app)
+        .get('/api/v1/admin/staff')
+        .set('Authorization', `Bearer ${officerToken}`);
+      expect(forbiddenStaffMgmt.status).toBe(403);
+
+      // 7. School Admin updates officer role to registrar & rotates Institution Key
+      const updateRoleRes = await request(app)
+        .patch(`/api/v1/admin/staff/${officerUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'registrar' });
+      expect(updateRoleRes.status).toBe(200);
+      expect(updateRoleRes.body.data.role).toBe('registrar');
+
+      const rotateRes = await request(app)
+        .post('/api/v1/admin/institution/regenerate-key')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({});
+      expect(rotateRes.status).toBe(200);
+      expect(rotateRes.body.data.authorizationKey).toMatch(/^CQ-/);
+      expect(rotateRes.body.data.authorizationKey).not.toBe(institutionKey);
     });
   });
 });

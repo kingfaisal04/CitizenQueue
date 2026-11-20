@@ -34,6 +34,8 @@ export const requireStudent = requireRole('student', 'citizen');
 
 export const requireAdmin = requireRole(
   'admin',
+  'school_admin',
+  'super_admin',
   'academic_officer',
   'housemaster',
   'registrar',
@@ -42,10 +44,12 @@ export const requireAdmin = requireRole(
   'collection_officer'
 );
 
-export const requireFinanceOfficer = requireRole('admin', 'finance_officer');
+export const requireSchoolManager = requireRole('admin', 'school_admin', 'super_admin');
 
-export const requireLibraryOfficer = requireRole('admin', 'library_officer');
+export const requireFinanceOfficer = requireRole('admin', 'school_admin', 'super_admin', 'finance_officer');
 
-export const requireAcademicOfficer = requireRole('admin', 'academic_officer', 'registrar');
+export const requireLibraryOfficer = requireRole('admin', 'school_admin', 'super_admin', 'library_officer');
 
-export const requireCollectionOfficer = requireRole('admin', 'collection_officer', 'registrar');
+export const requireAcademicOfficer = requireRole('admin', 'school_admin', 'super_admin', 'academic_officer', 'registrar');
+
+export const requireCollectionOfficer = requireRole('admin', 'school_admin', 'super_admin', 'collection_officer', 'registrar');

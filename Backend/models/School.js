@@ -1,4 +1,78 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
+
+/**
+ * Generates a readable, high-entropy Institution Authorization Key
+ * e.g. CQ-ACH-7K9M2X
+ */
+export function generateInstitutionKey(shortCode = 'SHS') {
+  const cleanPrefix = (shortCode || 'SHS')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 4) || 'SHS';
+  const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+  return `CQ-${cleanPrefix}-${randomPart}`;
+}
+
+const StaffRosterEntrySchema = new mongoose.Schema(
+  {
+    staffId: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true
+    },
+    fullName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    assignedRole: {
+      type: String,
+      enum: [
+        'admin',
+        'school_admin',
+        'academic_officer',
+        'housemaster',
+        'registrar',
+        'finance_officer',
+        'library_officer',
+        'collection_officer'
+      ],
+      default: 'academic_officer'
+    },
+    designation: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'claimed', 'revoked'],
+      default: 'pending'
+    },
+    claimedByUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: true }
+);
 
 const DocumentRequirementSchema = new mongoose.Schema(
   {
@@ -77,6 +151,23 @@ const SchoolSchema = new mongoose.Schema(
       default: ''
     },
     documentRequirements: [DocumentRequirementSchema],
+    // Institutional onboarding security key (never returned in public GET /schools)
+    authorizationKey: {
+      type: String,
+      trim: true,
+      select: false,
+      default: null
+    },
+    authorizationKeyUpdatedAt: {
+      type: Date,
+      default: null
+    },
+    // Pre-authorized Staff ID -> Role roster managed by School Administrators
+    authorizedStaffRoster: {
+      type: [StaffRosterEntrySchema],
+      select: false,
+      default: []
+    },
     appointmentSettings: {
       slotDurationMinutes: { type: Number, default: 20 },
       maxBookingDaysInAdvance: { type: Number, default: 30 },

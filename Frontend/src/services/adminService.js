@@ -91,6 +91,41 @@ export const adminService = {
    */
   createCapacitySlots: async (slotData) => {
     return await apiClient.post('/admin/slots', slotData);
+  },
+
+  /**
+   * Retrieve institution key, pre-assigned Staff ID roster, and registered staff accounts
+   */
+  getInstitutionStaffOverview: async () => {
+    return await apiClient.get('/admin/staff');
+  },
+
+  /**
+   * Rotate / regenerate the Institution Authorization Key
+   */
+  regenerateInstitutionKey: async () => {
+    return await apiClient.post('/admin/institution/regenerate-key', {});
+  },
+
+  /**
+   * Pre-assign a Staff ID to a role, designation, and department
+   */
+  addStaffRosterEntry: async (entry) => {
+    return await apiClient.post('/admin/staff/roster', entry);
+  },
+
+  /**
+   * Remove a pre-assigned Staff ID from the institution roster
+   */
+  removeStaffRosterEntry: async (staffId) => {
+    return await apiClient.delete(`/admin/staff/roster/${encodeURIComponent(staffId)}`);
+  },
+
+  /**
+   * Update a registered staff member's role, staffId, designation, department, or status
+   */
+  updateStaffMember: async (userId, updates) => {
+    return await apiClient.patch(`/admin/staff/${userId}`, updates);
   }
 };
 

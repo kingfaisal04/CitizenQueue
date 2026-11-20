@@ -12,16 +12,12 @@ import { useAuth } from '../../context/AuthContext';
 import { ShieldAlert, ArrowLeft, UserCheck } from 'lucide-react';
 
 export default function RoleRoute({ allowedRoles = [], children }) {
-  const { currentUser, loginAsCitizen, loginAsAdmin } = useAuth();
+  const { currentUser, hasRole, loginAsCitizen, loginAsAdmin } = useAuth();
   const currentRole = currentUser?.role || 'guest';
 
-  // Check if role is authorized (allow 'student' or 'citizen' interchangeably)
-  const isAuthorized = allowedRoles.some((role) => {
-    if (role === 'student' || role === 'citizen') {
-      return currentRole === 'student' || currentRole === 'citizen';
-    }
-    return currentRole === role;
-  });
+  // Check if role is authorized using centralized AuthContext role mapping
+  // (treats school_admin, finance_officer, academic_officer, housemaster, etc. as admin staff)
+  const isAuthorized = allowedRoles.some((role) => hasRole(role));
 
   if (!isAuthorized) {
     const requiredRoleName = allowedRoles.includes('admin')

@@ -44,6 +44,7 @@ const UserSchema = new mongoose.Schema(
         'student',
         'admin',
         'school_admin',
+        'super_admin',
         'academic_officer',
         'housemaster',
         'registrar',

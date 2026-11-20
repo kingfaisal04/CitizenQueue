@@ -111,7 +111,44 @@ export const authService = {
   },
 
   /**
-   * Register a new institutional administrator or staff officer
+   * Register a brand-new Institution with its primary School Administrator
+   * and receive a generated Institution Authorization Key
+   */
+  registerInstitution: async (institutionData) => {
+    const payload = {
+      schoolName: institutionData.schoolName,
+      shortName: institutionData.shortName || undefined,
+      category: institutionData.category || 'Senior High School',
+      region: institutionData.region,
+      city: institutionData.city,
+      address: institutionData.address || undefined,
+      contactEmail: institutionData.contactEmail || undefined,
+      contactPhone: institutionData.contactPhone || undefined,
+      adminFullName: institutionData.adminFullName,
+      adminStaffId: institutionData.adminStaffId,
+      adminEmail: institutionData.adminEmail,
+      adminPhone: institutionData.adminPhone,
+      adminDesignation: institutionData.adminDesignation || 'Head of Institution',
+      adminDepartment: institutionData.adminDepartment || 'Administration & General Operations',
+      password: institutionData.password
+    };
+
+    const res = await apiClient.post('/auth/register-institution', payload, { requiresAuth: false });
+
+    if (res.success && res.data) {
+      const { user, school, authorizationKey, accessToken } = res.data;
+      if (accessToken) {
+        setClientToken(accessToken);
+      }
+      authService.setCurrentUser(user);
+      return { success: true, user, school, authorizationKey, token: accessToken };
+    }
+
+    return res;
+  },
+
+  /**
+   * Register a new institutional administrator or staff officer under an existing school
    */
   registerAdmin: async (staffData) => {
     const payload = {
@@ -120,8 +157,13 @@ export const authService = {
       password: staffData.password || 'Password123!',
       phoneNumber: staffData.phone || staffData.phoneNumber,
       schoolId: staffData.schoolId || staffData.institutionId || 'inst-1',
-      role: staffData.role || 'school_admin',
-      staffId: staffData.staffId
+      schoolName: staffData.schoolName || undefined,
+      role: staffData.role || 'academic_officer',
+      staffId: staffData.staffId,
+      designation: staffData.designation,
+      department: staffData.department,
+      authorizationKey: staffData.authorizationKey || staffData.inviteCode,
+      inviteCode: staffData.authorizationKey || staffData.inviteCode
     };
 
     const res = await apiClient.post('/auth/register-admin', payload, { requiresAuth: false });

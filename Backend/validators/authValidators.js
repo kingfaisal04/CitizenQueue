@@ -34,21 +34,84 @@ export const studentRegisterSchema = z.object({
   homeTown: z.string().trim().optional(),
 });
 
+const staffRoleEnum = z.enum([
+  'admin',
+  'school_admin',
+  'super_admin',
+  'academic_officer',
+  'housemaster',
+  'registrar',
+  'finance_officer',
+  'library_officer',
+  'collection_officer',
+]);
+
 export const adminRegisterSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100),
   email: z.string().email('Invalid official email address format').toLowerCase().trim(),
   password: passwordRule,
-  phoneNumber: z.string().min(10, 'Valid contact number is required').max(20),
-  schoolId: z.string().min(1, 'Associated institution schoolId is required for administrator provisioning'),
-  role: z.enum([
+  phoneNumber: z.string().trim().min(9, 'Valid contact number is required').max(25),
+  schoolId: z.string().trim().min(1, 'Associated institution schoolId is required for administrator provisioning'),
+  schoolName: z.string().trim().optional(),
+  role: staffRoleEnum.default('school_admin'),
+  staffId: z.string().trim().optional(),
+  designation: z.string().trim().optional(),
+  department: z.string().trim().optional(),
+  inviteCode: z.string().trim().optional(),
+  authorizationKey: z.string().trim().optional(),
+});
+
+export const institutionRegisterSchema = z.object({
+  schoolName: z.string().trim().min(3, 'Institution name must be at least 3 characters').max(150),
+  shortName: z.string().trim().max(60).optional(),
+  category: z.enum(['Senior High School', 'Tertiary Institution', 'Technical Institute']).default('Senior High School'),
+  region: z.string().trim().min(2, 'Region is required').max(80),
+  city: z.string().trim().min(2, 'City or town is required').max(80),
+  address: z.string().trim().max(200).optional(),
+  contactEmail: optionalEmail,
+  contactPhone: z.string().trim().max(25).optional(),
+  // Primary Head of Institution / School Admin account
+  adminFullName: z.string().trim().min(2, 'Administrator full name is required').max(100),
+  adminStaffId: z.string().trim().min(2, 'Administrator Staff ID is required').max(50),
+  adminEmail: z.string().email('Invalid administrator email address').toLowerCase().trim(),
+  adminPhone: z.string().trim().min(9, 'Valid administrator phone number is required').max(25),
+  adminDesignation: z.string().trim().max(100).optional(),
+  adminDepartment: z.string().trim().max(100).optional(),
+  password: passwordRule,
+});
+
+export const staffRosterEntrySchema = z.object({
+  staffId: z.string().trim().min(2, 'Staff ID is required').max(50),
+  fullName: z.string().trim().max(100).optional(),
+  assignedRole: z.enum([
+    'admin',
     'school_admin',
     'academic_officer',
+    'housemaster',
+    'registrar',
     'finance_officer',
     'library_officer',
     'collection_officer',
-    'super_admin',
-  ]).default('school_admin'),
-  inviteCode: z.string().optional(),
+  ]),
+  designation: z.string().trim().max(100).optional(),
+  department: z.string().trim().max(100).optional(),
+});
+
+export const updateStaffMemberSchema = z.object({
+  role: z.enum([
+    'admin',
+    'school_admin',
+    'academic_officer',
+    'housemaster',
+    'registrar',
+    'finance_officer',
+    'library_officer',
+    'collection_officer',
+  ]).optional(),
+  staffId: z.string().trim().min(2).max(50).optional(),
+  designation: z.string().trim().max(100).optional(),
+  department: z.string().trim().max(100).optional(),
+  accountStatus: z.enum(['active', 'suspended']).optional(),
 });
 
 export const loginSchema = z.object({

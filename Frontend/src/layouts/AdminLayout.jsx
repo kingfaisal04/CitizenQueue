@@ -17,7 +17,8 @@ import {
   ArrowLeft,
   Menu,
   X,
-  Shield
+  Shield,
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -48,7 +49,7 @@ const getShortRole = (role) => {
 
 export default function AdminLayout() {
   const location = useLocation();
-  const { currentUser, loginAsCitizen } = useAuth();
+  const { currentUser, isSchoolManager, loginAsCitizen } = useAuth();
   const [mobileAdminNavOpen, setMobileAdminNavOpen] = useState(false);
 
   const navItems = [
@@ -57,7 +58,8 @@ export default function AdminLayout() {
     { name: 'Document Verification', path: '/admin/documents', icon: FileText },
     { name: 'Prospectus', path: '/admin/prospectus', icon: ShoppingBag },
     { name: 'Appointments', path: '/admin/appointments', icon: CalendarCheck },
-    { name: 'Capacity', path: '/admin/availability', icon: Clock }
+    { name: 'Capacity', path: '/admin/availability', icon: Clock },
+    ...(isSchoolManager ? [{ name: 'Staff & Key', path: '/admin/staff', icon: KeyRound }] : [])
   ];
 
   const isActive = (path) => {

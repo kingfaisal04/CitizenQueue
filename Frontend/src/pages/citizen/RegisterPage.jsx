@@ -694,12 +694,12 @@ export default function RegisterPage() {
 
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-700">
-                    Home Town & Region
+                    Town & Region
                   </label>
                   <input
                     type="text"
                     name="homeTown"
-                    placeholder="e.g. Kasoa, Central Region"
+                    placeholder="Enter Your Town & Region"
                     value={formData.homeTown}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
@@ -723,15 +723,12 @@ export default function RegisterPage() {
                     <label className="text-xs font-semibold text-slate-700">
                       Password (min. 8 characters) *
                     </label>
-                    <span className="text-[10px] text-cqTeal-600 font-medium">
-                      At least 1 letter
-                    </span>
                   </div>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       name="password"
-                      placeholder="At least 8 characters (no max limit)"
+                      placeholder="Enter Your Password"
                       value={formData.password}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 pr-10"
@@ -745,9 +742,6 @@ export default function RegisterPage() {
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    Must be &ge; 8 characters with at least one letter. There is no 8-character max limit.
-                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -755,9 +749,6 @@ export default function RegisterPage() {
                     <label className="text-xs font-semibold text-slate-700">
                       Confirm Password *
                     </label>
-                    <span className="text-[10px] text-slate-400">
-                      Match above
-                    </span>
                   </div>
                   <div className="relative">
                     <input
@@ -777,9 +768,6 @@ export default function RegisterPage() {
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    Must match password exactly.
-                  </p>
                 </div>
               </div>
             </div>

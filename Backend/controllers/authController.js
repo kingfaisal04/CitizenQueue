@@ -27,6 +27,23 @@ export const registerStudent = asyncHandler(async (req, res) => {
   });
 });
 
+export const registerInstitution = asyncHandler(async (req, res) => {
+  const result = await AuthService.registerInstitution(
+    req.body,
+    req.ip,
+    req.headers['user-agent']
+  );
+
+  res.cookie('refreshToken', result.tokens.refreshToken, COOKIE_OPTIONS);
+  return ApiResponse.created(res, {
+    user: result.user,
+    school: result.school,
+    authorizationKey: result.authorizationKey,
+    accessToken: result.tokens.accessToken,
+    refreshToken: result.tokens.refreshToken,
+  });
+});
+
 export const registerAdmin = asyncHandler(async (req, res) => {
   const result = await AuthService.registerAdmin(
     req.body,

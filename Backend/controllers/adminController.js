@@ -1,4 +1,6 @@
 import {
+  User,
+  School,
   Student,
   Admission,
   Document,
@@ -6,6 +8,7 @@ import {
   AppointmentSlot,
   AuditLog,
 } from '../models/index.js';
+import { generateInstitutionKey } from '../models/School.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -189,4 +192,263 @@ export const createCapacitySlots = asyncHandler(async (req, res) => {
   }
 
   return ApiResponse.created(res, { createdCount: createdSlots.length, slots: createdSlots });
+});
+
+/**
+ * GET /api/v1/admin/staff
+ * Returns institution configuration (including Institution Authorization Key),
+ * pre-assigned Staff ID roster, and registered active staff accounts for the admin's school.
+ */
+export const getInstitutionStaffOverview = asyncHandler(async (req, res) => {
+  const schoolId = req.user.schoolId;
+
+  const school = await School.findOne({ schoolId }).select('+authorizationKey +authorizedStaffRoster');
+  if (!school) {
+    throw ApiError.notFound(`Institution record (${schoolId}) not found`);
+  }
+
+  // Ensure legacy seeded schools automatically receive an Institution Authorization Key
+  if (!school.authorizationKey) {
+    school.authorizationKey = generateInstitutionKey(school.shortName || school.name);
+    school.authorizationKeyUpdatedAt = new Date();
+    await school.save();
+  }
+
+  const staffUsers = await User.find({
+    schoolId,
+    role: { $nin: ['citizen', 'student'] },
+  })
+    .select('-password -refreshTokens')
+    .sort({ createdAt: -1 });
+
+  return ApiResponse.success(res, {
+    school: {
+      id: school._id,
+      schoolId: school.schoolId,
+      name: school.name,
+      shortName: school.shortName,
+      category: school.category,
+      region: school.region,
+      city: school.city,
+      contactEmail: school.contactEmail,
+      contactPhone: school.contactPhone,
+      authorizationKey: school.authorizationKey,
+      authorizationKeyUpdatedAt: school.authorizationKeyUpdatedAt,
+    },
+    roster: (school.authorizedStaffRoster || []).sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    ),
+    staff: staffUsers,
+  });
+});
+
+/**
+ * POST /api/v1/admin/institution/regenerate-key
+ * Rotates the Institution Authorization Key for the admin's school.
+ */
+export const regenerateInstitutionKey = asyncHandler(async (req, res) => {
+  const schoolId = req.user.schoolId;
+
+  const school = await School.findOne({ schoolId }).select('+authorizationKey');
+  if (!school) {
+    throw ApiError.notFound(`Institution record (${schoolId}) not found`);
+  }
+
+  const newKey = generateInstitutionKey(school.shortName || school.name);
+  school.authorizationKey = newKey;
+  school.authorizationKeyUpdatedAt = new Date();
+  await school.save();
+
+  await AuditLog.create({
+    user: req.user._id,
+    userName: req.user.name,
+    userRole: req.user.role,
+    schoolId,
+    action: 'INSTITUTION_KEY_ROTATED',
+    targetResource: 'School',
+    targetId: school._id.toString(),
+    details: { schoolId },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  return ApiResponse.success(res, {
+    authorizationKey: school.authorizationKey,
+    authorizationKeyUpdatedAt: school.authorizationKeyUpdatedAt,
+  });
+});
+
+/**
+ * POST /api/v1/admin/staff/roster
+ * Pre-assigns a Staff ID to a specific system Role, Designation, and Department.
+ */
+export const addStaffRosterEntry = asyncHandler(async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { staffId, fullName = '', assignedRole, designation = '', department = '' } = req.body;
+  const normalizedStaffId = staffId.trim().toUpperCase();
+
+  const school = await School.findOne({ schoolId }).select('+authorizedStaffRoster');
+  if (!school) {
+    throw ApiError.notFound(`Institution record (${schoolId}) not found`);
+  }
+
+  // Check if an active registered staff account already uses this Staff ID
+  const existingStaff = await User.findOne({
+    schoolId,
+    staffId: normalizedStaffId,
+    role: { $nin: ['citizen', 'student'] },
+  });
+  if (existingStaff) {
+    throw ApiError.conflict(
+      `Staff ID ${normalizedStaffId} already belongs to registered officer ${existingStaff.name}. Update their role directly in the Active Staff table.`
+    );
+  }
+
+  const existingIndex = (school.authorizedStaffRoster || []).findIndex(
+    (entry) => entry.staffId === normalizedStaffId
+  );
+
+  if (existingIndex >= 0) {
+    const existing = school.authorizedStaffRoster[existingIndex];
+    if (existing.status === 'claimed') {
+      throw ApiError.conflict(`Staff ID ${normalizedStaffId} has already been claimed by a registered account.`);
+    }
+    // Update pending/revoked entry in place
+    existing.fullName = fullName || existing.fullName;
+    existing.assignedRole = assignedRole;
+    existing.designation = designation;
+    existing.department = department;
+    existing.status = 'pending';
+    existing.addedBy = req.user._id;
+  } else {
+    school.authorizedStaffRoster.push({
+      staffId: normalizedStaffId,
+      fullName,
+      assignedRole,
+      designation,
+      department,
+      status: 'pending',
+      addedBy: req.user._id,
+    });
+  }
+
+  await school.save();
+
+  const savedEntry = school.authorizedStaffRoster.find(
+    (entry) => entry.staffId === normalizedStaffId
+  );
+
+  await AuditLog.create({
+    user: req.user._id,
+    userName: req.user.name,
+    userRole: req.user.role,
+    schoolId,
+    action: 'STAFF_ROSTER_ASSIGNED',
+    targetResource: 'School',
+    targetId: school._id.toString(),
+    details: { staffId: normalizedStaffId, assignedRole, designation, department },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  return ApiResponse.created(res, savedEntry);
+});
+
+/**
+ * DELETE /api/v1/admin/staff/roster/:staffId
+ * Removes a pre-assigned Staff ID from the institution roster.
+ */
+export const removeStaffRosterEntry = asyncHandler(async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const normalizedStaffId = decodeURIComponent(req.params.staffId || '').trim().toUpperCase();
+
+  const school = await School.findOne({ schoolId }).select('+authorizedStaffRoster');
+  if (!school) {
+    throw ApiError.notFound(`Institution record (${schoolId}) not found`);
+  }
+
+  const initialLength = (school.authorizedStaffRoster || []).length;
+  school.authorizedStaffRoster = (school.authorizedStaffRoster || []).filter(
+    (entry) => entry.staffId !== normalizedStaffId
+  );
+
+  if (school.authorizedStaffRoster.length === initialLength) {
+    throw ApiError.notFound(`Staff ID ${normalizedStaffId} was not found in the roster`);
+  }
+
+  await school.save();
+
+  await AuditLog.create({
+    user: req.user._id,
+    userName: req.user.name,
+    userRole: req.user.role,
+    schoolId,
+    action: 'STAFF_ROSTER_REMOVED',
+    targetResource: 'School',
+    targetId: school._id.toString(),
+    details: { staffId: normalizedStaffId },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  return ApiResponse.success(res, { removedStaffId: normalizedStaffId });
+});
+
+/**
+ * PATCH /api/v1/admin/staff/:userId
+ * Updates a registered staff member's Role, Staff ID, Designation, Department, or Account Status.
+ */
+export const updateStaffMember = asyncHandler(async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { userId } = req.params;
+  const { role, staffId, designation, department, accountStatus } = req.body;
+
+  const targetUser = await User.findOne({
+    _id: userId,
+    schoolId,
+    role: { $nin: ['citizen', 'student'] },
+  }).select('-password -refreshTokens');
+
+  if (!targetUser) {
+    throw ApiError.notFound('Staff member not found in your institution');
+  }
+
+  // Prevent administrator from locking themselves out
+  if (targetUser._id.toString() === req.user._id.toString()) {
+    if (accountStatus === 'suspended') {
+      throw ApiError.badRequest('You cannot suspend your own administrator account.');
+    }
+    if (role && !['admin', 'school_admin', 'super_admin'].includes(role)) {
+      throw ApiError.badRequest('You cannot demote your own primary administrator role.');
+    }
+  }
+
+  const previousRole = targetUser.role;
+  if (role !== undefined) targetUser.role = role;
+  if (staffId !== undefined) targetUser.staffId = staffId.trim().toUpperCase();
+  if (designation !== undefined) targetUser.designation = designation;
+  if (department !== undefined) targetUser.department = department;
+  if (accountStatus !== undefined) targetUser.accountStatus = accountStatus;
+
+  await targetUser.save();
+
+  await AuditLog.create({
+    user: req.user._id,
+    userName: req.user.name,
+    userRole: req.user.role,
+    schoolId,
+    action: 'STAFF_ROLE_UPDATED',
+    targetResource: 'User',
+    targetId: targetUser._id.toString(),
+    details: {
+      staffId: targetUser.staffId,
+      previousRole,
+      newRole: targetUser.role,
+      accountStatus: targetUser.accountStatus,
+    },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  return ApiResponse.success(res, targetUser);
 });

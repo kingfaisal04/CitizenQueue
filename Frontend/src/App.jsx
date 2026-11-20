@@ -49,6 +49,7 @@ import AdminAppointmentsPage from './pages/admin/AdminAppointmentsPage';
 import AdminAvailabilityPage from './pages/admin/AdminAvailabilityPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
 import AdminRegisterPage from './pages/admin/AdminRegisterPage';
+import AdminStaffManagementPage from './pages/admin/AdminStaffManagementPage';
 
 // Fallback Page
 import NotFoundPage from './pages/NotFoundPage';
@@ -74,8 +75,9 @@ export default function App() {
               <Route path="/signin" element={<SignInPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/signup" element={<RegisterPage />} />
-              <Route path="/admin/register" element={<AdminRegisterPage />} />
-              <Route path="/staff/register" element={<AdminRegisterPage />} />
+              <Route path="/admin/register" element={<AdminRegisterPage defaultMode="staff" />} />
+              <Route path="/staff/register" element={<AdminRegisterPage defaultMode="staff" />} />
+              <Route path="/institution/register" element={<AdminRegisterPage defaultMode="institution" />} />
             </Route>
 
             {/* 2. Admitted Student & Guardian Portal (Protected by Auth & Student Role) */}
@@ -113,6 +115,7 @@ export default function App() {
               <Route path="appointments" element={<AdminAppointmentsPage />} />
               <Route path="availability" element={<AdminAvailabilityPage />} />
               <Route path="services" element={<AdminServicesPage />} />
+              <Route path="staff" element={<AdminStaffManagementPage />} />
             </Route>
 
             {/* 4. Global 404 Fallback */}

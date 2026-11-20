@@ -120,6 +120,18 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Register a brand-new Institution & its primary School Administrator
+   */
+  const registerInstitution = async (institutionData) => {
+    const res = await authService.registerInstitution(institutionData);
+    if (res.success) {
+      setCurrentUser(res.user);
+      setToken(res.token);
+    }
+    return res;
+  };
+
+  /**
    * Register a new institutional administrator / staff member
    */
   const registerStaff = async (staffData) => {
@@ -157,6 +169,18 @@ export function AuthProvider({ children }) {
     return await authService.resetPassword({ identifier, otp, newPassword });
   };
 
+  const ADMIN_ROLES = [
+    'admin',
+    'school_admin',
+    'academic_officer',
+    'housemaster',
+    'registrar',
+    'finance_officer',
+    'library_officer',
+    'collection_officer',
+    'super_admin'
+  ];
+
   const hasRole = useCallback(
     (role) => {
       if (!currentUser) return false;
@@ -164,15 +188,7 @@ export function AuthProvider({ children }) {
         return currentUser.role === 'student' || currentUser.role === 'citizen';
       }
       if (role === 'admin') {
-        return [
-          'admin',
-          'school_admin',
-          'academic_officer',
-          'finance_officer',
-          'library_officer',
-          'collection_officer',
-          'super_admin'
-        ].includes(currentUser.role);
+        return ADMIN_ROLES.includes(currentUser.role);
       }
       return currentUser.role === role;
     },
@@ -183,17 +199,10 @@ export function AuthProvider({ children }) {
     currentUser && (currentUser.role === 'student' || currentUser.role === 'citizen')
   );
 
-  const isAdmin = Boolean(
-    currentUser &&
-      [
-        'admin',
-        'school_admin',
-        'academic_officer',
-        'finance_officer',
-        'library_officer',
-        'collection_officer',
-        'super_admin'
-      ].includes(currentUser.role)
+  const isAdmin = Boolean(currentUser && ADMIN_ROLES.includes(currentUser.role));
+
+  const isSchoolManager = Boolean(
+    currentUser && ['admin', 'school_admin', 'super_admin'].includes(currentUser.role)
   );
 
   const isAuthenticated = Boolean(currentUser && currentUser.role !== 'guest');
@@ -209,6 +218,7 @@ export function AuthProvider({ children }) {
         loginAsCitizen,
         loginAsAdmin,
         registerCandidate,
+        registerInstitution,
         registerStaff,
         logout,
         forgotPassword,
@@ -218,6 +228,7 @@ export function AuthProvider({ children }) {
         isStudent,
         isCitizen: isStudent,
         isAdmin,
+        isSchoolManager,
         isGuest: !isAuthenticated,
         isAuthenticated
       }}

@@ -1,4 +1,6 @@
-import { User, Student, School, Admission, AuditLog } from '../models/index.js';
+import crypto from 'crypto';
+import { User, Student, School, Admission, AuditLog, Service } from '../models/index.js';
+import { generateInstitutionKey } from '../models/School.js';
 import { EmailService } from './emailService.js';
 import { ApiError } from '../utils/ApiError.js';
 import {
@@ -161,19 +163,244 @@ export class AuthService {
   }
 
   /**
-   * Register an administrator or officer
+   * Register a brand-new Institution along with its primary Head / School Admin account
+   * and generate a unique Institution Authorization Key.
+   */
+  static async registerInstitution(data, ipAddress = null, userAgent = null) {
+    const {
+      schoolName,
+      shortName,
+      category = 'Senior High School',
+      region,
+      city,
+      address = '',
+      contactEmail,
+      contactPhone = '',
+      adminFullName,
+      adminStaffId,
+      adminEmail,
+      adminPhone,
+      adminDesignation = 'Head of Institution',
+      adminDepartment = 'Administration & General Operations',
+      password,
+    } = data;
+
+    const existingUser = await User.findOne({ email: adminEmail.toLowerCase() });
+    if (existingUser) {
+      throw ApiError.conflict('An account with this administrator email address already exists');
+    }
+
+    const escapedName = schoolName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existingSchool = await School.findOne({
+      name: { $regex: `^${escapedName}$`, $options: 'i' },
+    });
+    if (existingSchool) {
+      throw ApiError.conflict(
+        `"${existingSchool.name}" is already registered on CitizenQueue. Please use the Staff Onboarding tab with your Institution Authorization Key.`
+      );
+    }
+
+    // Generate clean unique schoolId and Institution Authorization Key
+    const slug = (shortName || schoolName)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 18) || 'school';
+    const uniqueSuffix = crypto.randomBytes(2).toString('hex');
+    const schoolId = `inst-${slug}-${uniqueSuffix}`;
+    const authorizationKey = generateInstitutionKey(shortName || schoolName);
+    const normalizedStaffId = adminStaffId.trim().toUpperCase();
+
+    const schoolDoc = new School({
+      schoolId,
+      name: schoolName.trim(),
+      shortName: (shortName || schoolName).trim(),
+      category,
+      region: region.trim(),
+      city: city.trim(),
+      address: address.trim(),
+      contactEmail: (contactEmail || adminEmail).toLowerCase(),
+      contactPhone: contactPhone || adminPhone,
+      authorizationKey,
+      authorizationKeyUpdatedAt: new Date(),
+      authorizedStaffRoster: [],
+      isActive: true,
+    });
+    await schoolDoc.save();
+
+    // Seed an initial default admission service so bookings work immediately for this school
+    try {
+      await Service.create({
+        serviceId: `srv-${uniqueSuffix}-101`,
+        school: schoolDoc._id,
+        schoolId: schoolDoc.schoolId,
+        institutionId: schoolDoc.schoolId,
+        institutionName: schoolDoc.name,
+        name: 'Fresh SHS Students Admission Completion',
+        category: 'Admissions & Enrollment',
+        description: `Official verification of CSSPS placement slip, BECE results, and enrollment clearance for ${schoolDoc.name}.`,
+        location: 'Main Administration Block, Admissions Desk 1',
+        durationMinutes: 20,
+        isActive: true,
+      });
+    } catch {
+      // Non-blocking if service seed encounters any schema constraint
+    }
+
+    // Create founding School Administrator user
+    const user = new User({
+      name: adminFullName.trim(),
+      email: adminEmail.toLowerCase(),
+      phone: adminPhone.trim(),
+      password,
+      role: 'school_admin',
+      school: schoolDoc._id,
+      schoolId: schoolDoc.schoolId,
+      staffId: normalizedStaffId,
+      designation: adminDesignation,
+      department: adminDepartment,
+      accountStatus: 'active',
+      emailVerified: true,
+    });
+    await user.save();
+
+    // Record founding administrator on the school's roster as claimed
+    schoolDoc.authorizedStaffRoster.push({
+      staffId: normalizedStaffId,
+      fullName: user.name,
+      assignedRole: 'school_admin',
+      designation: adminDesignation,
+      department: adminDepartment,
+      status: 'claimed',
+      claimedByUser: user._id,
+      addedBy: user._id,
+    });
+    await schoolDoc.save();
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    const tokenHash = hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    user.refreshTokens.push({
+      tokenHash,
+      expiresAt,
+      ipAddress,
+      userAgent,
+    });
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    await AuditLog.create({
+      user: user._id,
+      userName: user.name,
+      userRole: user.role,
+      schoolId: schoolDoc.schoolId,
+      action: 'INSTITUTION_REGISTERED',
+      targetResource: 'School',
+      targetId: schoolDoc._id.toString(),
+      details: { schoolId: schoolDoc.schoolId, schoolName: schoolDoc.name, staffId: normalizedStaffId },
+      ipAddress,
+      userAgent,
+    });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    delete userObj.refreshTokens;
+    userObj.institutionName = schoolDoc.name;
+
+    const schoolObj = schoolDoc.toObject();
+    delete schoolObj.authorizedStaffRoster;
+    schoolObj.authorizationKey = authorizationKey;
+
+    return {
+      user: userObj,
+      school: schoolObj,
+      authorizationKey,
+      tokens: { accessToken, refreshToken },
+    };
+  }
+
+  /**
+   * Register an administrator or officer under an existing institution.
+   * Validates the Institution Authorization Key and applies any role pre-assigned to their Staff ID.
    */
   static async registerAdmin(data, ipAddress = null, userAgent = null) {
-    const { fullName, email, password, phoneNumber, schoolId, role = 'admin', staffId } = data;
+    const {
+      fullName,
+      email,
+      password,
+      phoneNumber,
+      schoolId,
+      schoolName,
+      role = 'school_admin',
+      staffId,
+      designation,
+      department,
+      inviteCode,
+      authorizationKey,
+    } = data;
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       throw ApiError.conflict('An administrator account with this email address already exists');
     }
 
-    let schoolDoc = await School.findOne({ schoolId });
+    // Look up school by schoolId first, then by schoolName if needed
+    let schoolDoc = await School.findOne({ schoolId }).select('+authorizationKey +authorizedStaffRoster');
+    if (!schoolDoc && schoolName) {
+      const escaped = schoolName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      schoolDoc = await School.findOne({
+        name: { $regex: `^${escaped}$`, $options: 'i' },
+      }).select('+authorizationKey +authorizedStaffRoster');
+    }
     if (!schoolDoc && schoolId) {
-      schoolDoc = await School.findOne();
+      schoolDoc = await School.findOne().select('+authorizationKey +authorizedStaffRoster');
+    }
+
+    // Validate Institution Authorization Key
+    const providedKey = (authorizationKey || inviteCode || '').trim();
+    if (schoolDoc?.authorizationKey) {
+      if (!providedKey || providedKey.toUpperCase() !== schoolDoc.authorizationKey.toUpperCase()) {
+        throw ApiError.forbidden(
+          'Invalid Institution Authorization Key. Please request the valid key from your School Administrator.'
+        );
+      }
+    } else if (providedKey && providedKey.toUpperCase() !== 'GES-SHS-2026') {
+      throw ApiError.forbidden(
+        'Invalid Institution Authorization Key. For seeded schools without a rotated key, use GES-SHS-2026 or obtain the key from your School Administrator.'
+      );
+    }
+
+    // Check pre-authorized Staff ID roster for admin-assigned role
+    const normalizedStaffId = (staffId || `STF-${Date.now().toString().slice(-5)}`).trim().toUpperCase();
+    let effectiveRole = role;
+    let effectiveDesignation = designation || null;
+    let effectiveDepartment = department || null;
+    let matchedRosterEntry = null;
+
+    if (schoolDoc && Array.isArray(schoolDoc.authorizedStaffRoster)) {
+      matchedRosterEntry = schoolDoc.authorizedStaffRoster.find(
+        (entry) => entry.staffId && entry.staffId.toUpperCase() === normalizedStaffId
+      );
+
+      if (matchedRosterEntry) {
+        if (matchedRosterEntry.status === 'revoked') {
+          throw ApiError.forbidden(
+            `Staff ID ${normalizedStaffId} has been revoked by your School Administrator.`
+          );
+        }
+        if (matchedRosterEntry.status === 'claimed') {
+          throw ApiError.conflict(
+            `Staff ID ${normalizedStaffId} is already registered to an active account.`
+          );
+        }
+        // Apply the role pre-assigned by the School Admin
+        effectiveRole = matchedRosterEntry.assignedRole || effectiveRole;
+        effectiveDesignation = effectiveDesignation || matchedRosterEntry.designation || null;
+        effectiveDepartment = effectiveDepartment || matchedRosterEntry.department || null;
+      }
     }
 
     const user = new User({
@@ -181,14 +408,26 @@ export class AuthService {
       email,
       phone: phoneNumber,
       password,
-      role,
+      role: effectiveRole,
       school: schoolDoc?._id || null,
       schoolId: schoolDoc?.schoolId || schoolId,
-      staffId: staffId || `STF-${Date.now().toString().slice(-5)}`,
+      staffId: normalizedStaffId,
+      designation: effectiveDesignation,
+      department: effectiveDepartment,
       accountStatus: 'active',
       emailVerified: true,
     });
     await user.save();
+
+    // Mark roster entry claimed if matched
+    if (schoolDoc && matchedRosterEntry) {
+      matchedRosterEntry.status = 'claimed';
+      matchedRosterEntry.claimedByUser = user._id;
+      if (!matchedRosterEntry.fullName) {
+        matchedRosterEntry.fullName = user.name;
+      }
+      await schoolDoc.save();
+    }
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -213,7 +452,12 @@ export class AuthService {
       action: 'ADMIN_REGISTERED',
       targetResource: 'User',
       targetId: user._id.toString(),
-      details: { role, schoolId: user.schoolId },
+      details: {
+        role: effectiveRole,
+        schoolId: user.schoolId,
+        staffId: normalizedStaffId,
+        matchedRoster: Boolean(matchedRosterEntry),
+      },
       ipAddress,
       userAgent,
     });
@@ -221,6 +465,9 @@ export class AuthService {
     const userObj = user.toObject();
     delete userObj.password;
     delete userObj.refreshTokens;
+    if (schoolDoc?.name) {
+      userObj.institutionName = schoolDoc.name;
+    }
 
     return {
       user: userObj,
@@ -306,6 +553,12 @@ export class AuthService {
     const userObj = user.toObject();
     delete userObj.password;
     delete userObj.refreshTokens;
+    if (user.schoolId) {
+      const userSchool = await School.findOne({ schoolId: user.schoolId }).select('name');
+      if (userSchool?.name) {
+        userObj.institutionName = userSchool.name;
+      }
+    }
 
     return {
       user: userObj,
@@ -403,6 +656,9 @@ export class AuthService {
     const userObj = user.toObject();
     delete userObj.password;
     delete userObj.refreshTokens;
+    if (user.school?.name) {
+      userObj.institutionName = user.school.name;
+    }
 
     return {
       user: userObj,
