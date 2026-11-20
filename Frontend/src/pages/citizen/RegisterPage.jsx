@@ -868,7 +868,7 @@ export default function RegisterPage() {
               className="inline-flex items-center gap-1.5 text-xs font-bold text-cqNavy-950 hover:text-cqTeal-700 hover:underline"
             >
               <Shield size={13} className="text-cqTeal-600" />
-              <span>Register Institutional Staff Profile</span>
+              <span>Register Staff</span>
               <ArrowRight size={12} />
             </Link>
           </div>
