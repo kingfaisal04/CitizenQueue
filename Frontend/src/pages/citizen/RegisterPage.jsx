@@ -82,8 +82,8 @@ export default function RegisterPage() {
     aggregateScore: '08',
     juniorHighSchool: '',
     guardianName: '',
-    guardianRelation: 'Father',
-    guardianPhone: '',
+    guardianRelation: '',
+    guardianPhone: '+233',
     guardianEmail: '',
     homeTown: '',
     password: '',
@@ -640,7 +640,7 @@ export default function RegisterPage() {
                     type="text"
                     required
                     name="guardianName"
-                    placeholder="e.g. Kwame Mensah"
+                    placeholder="e.g. Mohammed Faisal"
                     value={formData.guardianName}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
@@ -654,7 +654,7 @@ export default function RegisterPage() {
                   <input
                     type="text"
                     name="guardianRelation"
-                    placeholder="e.g. Father, Mother, Guardian"
+                    placeholder="e.g. Father, Mother"
                     value={formData.guardianRelation}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
@@ -685,26 +685,13 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     name="guardianEmail"
-                    placeholder="e.g. kwame.mensah@example.com"
+                    placeholder="e.g. faisal@example.com"
                     value={formData.guardianEmail}
                     onChange={handleChange}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
                   />
                 </div>
 
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Town & Region
-                  </label>
-                  <input
-                    type="text"
-                    name="homeTown"
-                    placeholder="Enter Your Town & Region"
-                    value={formData.homeTown}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500"
-                  />
-                </div>
               </div>
             </div>
 

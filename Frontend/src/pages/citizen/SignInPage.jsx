@@ -490,7 +490,7 @@ export default function SignInPage() {
                   <input
                     type={showStudentPassword ? 'text' : 'password'}
                     required
-                    placeholder="Enter your password"
+                    placeholder="XXXXXX"
                     value={studentPassword}
                     onChange={(e) => setStudentPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors pr-10"
@@ -707,7 +707,7 @@ export default function SignInPage() {
                   <input
                     type={showAdminPassword ? 'text' : 'password'}
                     required
-                    placeholder="Enter staff password"
+                    placeholder="XXXXXX"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cqTeal-500 transition-colors pr-10"

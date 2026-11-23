@@ -9,6 +9,9 @@ import apiRoutes from './routes/index.js';
 
 const app = express();
 
+// Trust first reverse proxy hop (required on Render / Vercel / load balancers for rate limiting & secure cookies)
+app.set('trust proxy', 1);
+
 // Security HTTP headers
 app.use(helmet());
 

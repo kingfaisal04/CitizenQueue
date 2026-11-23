@@ -67,12 +67,22 @@ export const GHANA_SHS_PROGRAMMES = [
 
 export const RESIDENTIAL_STATUSES = ['Boarding', 'Day'];
 
-export const API_CONFIG = {
-  BASE_URL:
+const resolveApiBaseUrl = () => {
+  const raw = (
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
-    'http://localhost:5000/api/v1',
-  TIMEOUT_MS: 15000,
+    'http://localhost:5000/api/v1'
+  ).trim().replace(/\/+$/, '');
+
+  if (raw.endsWith('/api/v1')) {
+    return raw;
+  }
+  return `${raw}/api/v1`;
+};
+
+export const API_CONFIG = {
+  BASE_URL: resolveApiBaseUrl(),
+  TIMEOUT_MS: 45000,
   SIMULATE_NETWORK_DELAY_MS: 0,
   USE_BACKEND: true
 };
