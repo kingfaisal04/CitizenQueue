@@ -2,11 +2,14 @@ import { AuthService } from '../services/authService.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
-// Cookie options for secure JWT storage
+// Cookie options for secure JWT storage (supports cross-site Vercel <-> Render HTTPS sessions)
+const IS_CROSS_SITE_PROD =
+  process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: IS_CROSS_SITE_PROD,
+  sameSite: IS_CROSS_SITE_PROD ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 

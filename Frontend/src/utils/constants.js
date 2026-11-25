@@ -67,12 +67,30 @@ export const GHANA_SHS_PROGRAMMES = [
 
 export const RESIDENTIAL_STATUSES = ['Boarding', 'Day'];
 
+const DEFAULT_PRODUCTION_API_URL = 'https://citizenqueue.onrender.com/api/v1';
+const DEFAULT_LOCAL_API_URL = 'http://localhost:5000/api/v1';
+
 const resolveApiBaseUrl = () => {
-  const raw = (
+  const envUrl =
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
-    'http://localhost:5000/api/v1'
-  ).trim().replace(/\/+$/, '');
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL);
+
+  const isLocalHost =
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+  const isProdBuild =
+    typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD;
+
+  const fallbackUrl =
+    isProdBuild && !isLocalHost ? DEFAULT_PRODUCTION_API_URL : DEFAULT_LOCAL_API_URL;
+
+  const raw = (envUrl || fallbackUrl).trim().replace(/\/+$/, '');
+
+  // Safeguard: never allow a deployed non-localhost frontend to silently target localhost
+  if (!isLocalHost && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(raw)) {
+    return DEFAULT_PRODUCTION_API_URL;
+  }
 
   if (raw.endsWith('/api/v1')) {
     return raw;
